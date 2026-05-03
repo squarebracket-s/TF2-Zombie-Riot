@@ -478,7 +478,6 @@ static int HeartBrokenAction(int client, int target, int which)
 
 	//dont let shields stack.
 	RemoveSpecificBuff(client, "Shielding");
-	ApplyStatusEffect(client, client, "Shielding", duration);
 	CoffinToggleVisiblity(client, false);
 	int ShieldGive = 0;
 	switch(which)
@@ -496,6 +495,7 @@ static int HeartBrokenAction(int client, int target, int which)
 			ShieldGive = ReturnEntityMaxHealth(client) / 7;
 		}
 	}
+	ApplyStatusEffect(client, client, "Shielding", duration);
 	if(LastMann)
 		ShieldGive *= 2;
 
