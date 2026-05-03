@@ -232,9 +232,8 @@ public void HeartBroken_OnTakeDamage(int victim, int &attacker, int &inflictor, 
 	if(WeaponLevel[attacker] >= 5)
 	{
 
-		GiveCoffinOnDamage(attacker, damage);
+		GiveCoffinOnDamage(attacker,victim,  damage);
 
-		
 		//more coffins means more damage, 0.2 is the dmg multiplier
 		damage *= (1.0 + (CoffinCharge[attacker] * 0.2));
 	}
@@ -477,24 +476,30 @@ static int HeartBrokenAction(int client, int target, int which)
 	char animation[255];
 	float duration = 1.0;
 
+	//dont let shields stack.
+	RemoveSpecificBuff(client, "Shielding");
+	ApplyStatusEffect(client, client, "Shielding", duration);
 	CoffinToggleVisiblity(client, false);
+	int ShieldGive = 0;
 	switch(which)
 	{
 		case 1:
 		{
 			Format(animation, sizeof(animation), "memorial_possession");
 			duration = 1.25;
+			ShieldGive = ReturnEntityMaxHealth(client) / 5;
 		}
 		case 2:
 		{
 			Format(animation, sizeof(animation), "o_dohhulan_parry");
 			duration = 2.0;
+			ShieldGive = ReturnEntityMaxHealth(client) / 7;
 		}
 	}
-	//dont let shields stack.
-	RemoveSpecificBuff(client, "Shielding");
-	ApplyStatusEffect(client, client, "Shielding", duration);
-	Shielding_Add(client, ReturnEntityMaxHealth(client) / 10);
+	if(LastMann)
+		ShieldGive *= 2;
+
+	Shielding_Add(client, ShieldGive);
 
 	float vAngles[3];
 	float vOrigin[3];
@@ -1073,7 +1078,7 @@ static void spawnBeam(float beamTiming, int r, int g, int b, int a, char sprite[
 
 
 
-stock void GiveCoffinOnDamage(int client, float damage)
+stock void GiveCoffinOnDamage(int client, int victim, float damage)
 {
 	int MinCashMaxGain = CurrentCash;
 	if(MinCashMaxGain <= 1000)
@@ -1090,11 +1095,22 @@ stock void GiveCoffinOnDamage(int client, float damage)
 	
 	float DamageForMaxCharge = (Pow(2.0 * MinCashMaxGain, 1.2) + MinCashMaxGain * 3.0);
 
+	DamageForMaxCharge *= 0.5;
 
+	if(b_thisNpcIsARaid[victim])
+		DamageForMaxCharge *= 0.85;
 
 	CoffinCharge[client] += (damage / DamageForMaxCharge);
-	if(CoffinCharge[client] >= 1.0)
-		CoffinCharge[client] = 1.0;
+	if(WeaponLevel[client] >= 6)
+	{
+		if(CoffinCharge[client] >= 1.0)
+			CoffinCharge[client] = 1.0;
+	}
+	else
+	{
+		if(CoffinCharge[client] >= 0.5)
+			CoffinCharge[client] = 0.5;
+	}
 	//Has to be atleast 3k.
 }
 
