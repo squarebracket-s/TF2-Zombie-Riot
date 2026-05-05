@@ -2104,6 +2104,7 @@ void CheckAlivePlayers(int killed=0, int Hurtviasdkhook = 0, bool TestLastman = 
 	LastMann_BeforeLastman = false;
 	CurrentPlayers = 0;
 	int PlayersLeftNotDowned = 0;
+	int PlayersLeftAliveHere = 0;
 
 	for(int client=1; client<=MaxClients; client++)
 	{
@@ -2132,9 +2133,10 @@ void CheckAlivePlayers(int killed=0, int Hurtviasdkhook = 0, bool TestLastman = 
 				
 		if(!b_IsAloneOnServer)
 		{
-			//normal server rules
-			if(dieingstate[client] == 0 && CheckDownedState)
+			if(dieingstate[client] == 0)
 				PlayersLeftNotDowned++;
+			//normal server rules
+			PlayersLeftAliveHere++;
 		}
 		else
 		{
@@ -2143,19 +2145,34 @@ void CheckAlivePlayers(int killed=0, int Hurtviasdkhook = 0, bool TestLastman = 
 			if(i_AmountDowned[client] < 700)
 			{
 				PlayersLeftNotDowned = 99;
+				PlayersLeftAliveHere = 99;
 			}
 			else
 			{
+				PlayersLeftAliveHere = 1;
 				PlayersLeftNotDowned = 1;
 				LastMann_BeforeLastman = false;
 				LastMann = true;
 			}
 		}
 	}
-
+	
 	if(PlayersLeftNotDowned == 1)
 	{
 		LastMann_BeforeLastman = true;
+		if(!CheckDownedState)
+		{
+			if(PlayersLeftAliveHere > 1)
+			{
+				if(LastMann)
+				{
+					Yakuza_Lastman(0);
+				}
+				LastMannScreenEffect = false;
+				//there are players left, dont trigger lastman
+				LastMann = false;
+			}
+		}
 	}
 	else
 	{
