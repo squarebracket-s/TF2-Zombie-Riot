@@ -2073,7 +2073,7 @@ void CheckLastMannStanding(int killed)
 		LastMann_BeforeLastman = true;
 	}
 }
-void CheckAlivePlayers(int killed=0, int Hurtviasdkhook = 0, bool TestLastman = false)
+void CheckAlivePlayers(int killed=0, int Hurtviasdkhook = 0, bool TestLastman = false, bool CheckDownedState = false)
 {
 	if(!Waves_Started() || Waves_InSetup() || GameRules_GetRoundState() != RoundState_ZombieRiot || Dungeon_CanRespawn())
 	{
@@ -2133,7 +2133,7 @@ void CheckAlivePlayers(int killed=0, int Hurtviasdkhook = 0, bool TestLastman = 
 		if(!b_IsAloneOnServer)
 		{
 			//normal server rules
-			if(dieingstate[client] == 0)
+			if(dieingstate[client] == 0 && CheckDownedState)
 				PlayersLeftNotDowned++;
 		}
 		else
