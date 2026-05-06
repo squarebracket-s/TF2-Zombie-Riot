@@ -9461,6 +9461,20 @@ void StatusEffects_HeartBroken()
 	data.SlotPriority				= 0; //if its higher, then the lower version is entirely ignored.
 	StatusEffect_AddGlobal(data);
 
+	strcopy(data.BuffName, sizeof(data.BuffName), "Call of the Heartbroken Weakened");
+	strcopy(data.HudDisplay, sizeof(data.HudDisplay), "WEAK");
+	strcopy(data.AboveEnemyDisplay, sizeof(data.AboveEnemyDisplay), ""); //dont display above head, so empty
+	data.DamageTakenMulti 			= 0.5;
+	data.DamageDealMulti			= 0.5;
+	//Make sure it isnt ignored, set it to 0.0, on need for extra func checks either.
+	data.MovementspeedModif			= -1.0;
+	data.Positive 					= false;
+	data.ShouldScaleWithPlayerCount = false;
+	data.ElementalLogic				= true;
+	data.Slot						= 0; //0 means ignored
+	data.SlotPriority				= 0; //if its higher, then the lower version is entirely ignored.
+	StatusEffect_AddGlobal(data);
+
 	strcopy(data.BuffName, sizeof(data.BuffName), "Call of the Heartbroken");
 	strcopy(data.HudDisplay, sizeof(data.HudDisplay), "H");
 	strcopy(data.AboveEnemyDisplay, sizeof(data.AboveEnemyDisplay), ""); //dont display above head, so empty
@@ -9521,7 +9535,18 @@ static void CallOfHeartBroken_Timer(int entity, StatusEffect Apply_MasterStatusE
 	float flDistanceToTarget = GetVectorDistance(flMe, flPos, true);
 	if(flDistanceToTarget > (MAX_RANGE_HEARTBROKEN * MAX_RANGE_HEARTBROKEN))
 	{
-		Apply_StatusEffect.TimeUntillOver -= 1.0;
+		ApplyStatusEffect(entity, entity, "Call of the Heartbroken Weakened", 0.5);
+		if(IsValidEntity(Apply_StatusEffect.WearableUse))
+		{
+			SetEntityRenderColor(Apply_StatusEffect.WearableUse, 125, 0, 0, 255);
+		}
+	}
+	else
+	{
+		if(IsValidEntity(Apply_StatusEffect.WearableUse))
+		{
+			SetEntityRenderColor(Apply_StatusEffect.WearableUse, 65, 0, 125, 255);
+		}
 	}
 	
 	E_AL_StatusEffects[entity].SetArray(ArrayPosition, Apply_StatusEffect);
