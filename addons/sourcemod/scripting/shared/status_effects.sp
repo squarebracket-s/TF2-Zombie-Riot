@@ -8550,31 +8550,39 @@ void Const2Modifs_Asexual_End(int victim, StatusEffect Apply_MasterStatusEffect,
 	float pos[3]; GetEntPropVector(victim, Prop_Data, "m_vecAbsOrigin", pos);
 	pos[2] += 50.0;
 	float ang[3]; GetEntPropVector(victim, Prop_Data, "m_angRotation", ang);
-	int summon = NPC_CreateById(i_NpcInternalId[victim], -1, pos, ang, GetTeam(victim));
-	if(summon > MaxClients)
+	int team = GetTeam(victim);
+	if(b_thisNpcIsARaid[victim])
 	{
-#if defined ZR
-		if(b_thisNpcIsARaid[summon])
-			WaveStart_SubWaveStart(GetGameTime());	//due to lots and lots of time
-#endif
-		fl_Extra_Damage[summon] = fl_Extra_Damage[victim];
-		fl_Extra_Speed[summon] = fl_Extra_Speed[victim];
-		fl_Extra_RangedArmor[summon] = fl_Extra_RangedArmor[victim];
-		fl_Extra_MeleeArmor[summon] = fl_Extra_MeleeArmor[victim];
-		SetEntProp(summon, Prop_Data, "m_iHealth", RoundToNearest(maxhealth));
-		SetEntProp(summon, Prop_Data, "m_iMaxHealth", RoundToNearest(maxhealth));
-		float flPos[3];
-		flPos = pos;
-		flPos[2] += 300.0;
-		flPos[0] += GetRandomInt(0,1) ? GetRandomFloat(-200.0, -100.0) : GetRandomFloat(100.0, 200.0);
-		flPos[1] += GetRandomInt(0,1) ? GetRandomFloat(-200.0, -100.0) : GetRandomFloat(200.0, 200.0);
-		CClotBody npc = view_as<CClotBody>(summon);
-		npc.SetVelocity({0.0,0.0,0.0});
-		PluginBot_Jump(summon, flPos);
-		ApplyStatusEffect(summon, summon, "Unstoppable Force", 2.0);
-#if defined ZR
-		ZRModifs_GiveRandomPrefix(summon);
-#endif
+		team = 999;
+	}
+	for(int i; i<2; i++)
+	{
+		int summon = NPC_CreateById(i_NpcInternalId[victim], -1, pos, ang, team);
+		if(summon > MaxClients)
+		{
+	#if defined ZR
+			if(b_thisNpcIsARaid[summon])
+				WaveStart_SubWaveStart(GetGameTime());	//due to lots and lots of time
+	#endif
+			fl_Extra_Damage[summon] = fl_Extra_Damage[victim];
+			fl_Extra_Speed[summon] = fl_Extra_Speed[victim];
+			fl_Extra_RangedArmor[summon] = fl_Extra_RangedArmor[victim];
+			fl_Extra_MeleeArmor[summon] = fl_Extra_MeleeArmor[victim];
+			SetEntProp(summon, Prop_Data, "m_iHealth", RoundToNearest(maxhealth));
+			SetEntProp(summon, Prop_Data, "m_iMaxHealth", RoundToNearest(maxhealth));
+			float flPos[3];
+			flPos = pos;
+			flPos[2] += 300.0;
+			flPos[0] += GetRandomInt(0,1) ? GetRandomFloat(-200.0, -100.0) : GetRandomFloat(100.0, 200.0);
+			flPos[1] += GetRandomInt(0,1) ? GetRandomFloat(-200.0, -100.0) : GetRandomFloat(200.0, 200.0);
+			CClotBody npc = view_as<CClotBody>(summon);
+			npc.SetVelocity({0.0,0.0,0.0});
+			PluginBot_Jump(summon, flPos);
+			ApplyStatusEffect(summon, summon, "Unstoppable Force", 2.0);
+	#if defined ZR
+			ZRModifs_GiveRandomPrefix(summon);
+	#endif
+		}
 	}
 }
 
@@ -8691,6 +8699,8 @@ float InsaneKnockbackDoExplode(int entity, int victim, float damage, int weapon)
 	if(entity == victim)
 		return 0.0;
 
+	ApplyStatusEffect(entity, victim, "Ragdolled", 2.5);	
+	FreezeNpcInTime(victim, 2.5);
 	ApplyStatusEffect(entity, victim, "Anti-Waves", 5.0);
 	float VecMe[3]; WorldSpaceCenter(entity, VecMe);
 	float VecEnemy[3]; WorldSpaceCenter(victim, VecEnemy);
