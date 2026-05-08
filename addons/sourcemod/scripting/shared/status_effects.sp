@@ -8609,33 +8609,26 @@ float Glug_TakeDamage_Spread(int attacker, int victim, StatusEffect Apply_Master
 	int ArrayPosition = E_AL_StatusEffects[victim].FindValue(Apply_StatusEffect.BuffIndex, E_StatusEffect::BuffIndex);
 	Apply_StatusEffect.DataForUse = GetGameTime() + 10.0;
 	E_AL_StatusEffects[victim].SetArray(ArrayPosition, Apply_StatusEffect);
-
-	float maxhealth = float(ReturnEntityMaxHealth(victim));
-	maxhealth *= 0.25;
-	if(b_thisNpcIsARaid[victim] || b_thisNpcIsABoss[victim])
-		maxhealth *= 0.025;
 		
 	float pos[3]; GetEntPropVector(victim, Prop_Data, "m_vecAbsOrigin", pos);
 	float ang[3]; GetEntPropVector(victim, Prop_Data, "m_angRotation", ang);
 	int summon = NPC_CreateByName("npc_glug", -1, pos, ang, GetTeam(victim), "");
 	if(summon > MaxClients)
 	{
-		float DamageDeal = 10.0;
-#if defined ZR
-		DamageDeal = float(CurrentCash);
-#endif
-		DamageDeal *= 0.001;
-		if(DamageDeal <= 1.0)
-			DamageDeal = 1.0;
+		float DamageDeal = float(Waves_GetRoundScale()+1);
+		DamageDeal *= 0.133333;
+		DamageDeal = wave;
+		DamageDeal *= MinibossScalingReturn();
+		DamageDeal *= 0.75;
 
-		if(DamageDeal > 100.0)
-			DamageDeal = 100.0;
+		int Health = CharToInt(MinibossHealthScaling(70.0, true));
+
 		fl_Extra_Damage[summon] *= DamageDeal;
 		fl_Extra_Speed[summon] = fl_Extra_Speed[victim];
 		fl_Extra_RangedArmor[summon] = fl_Extra_RangedArmor[victim];
 		fl_Extra_MeleeArmor[summon] = fl_Extra_MeleeArmor[victim];
-		SetEntProp(summon, Prop_Data, "m_iHealth", RoundToNearest(maxhealth));
-		SetEntProp(summon, Prop_Data, "m_iMaxHealth", RoundToNearest(maxhealth));
+		SetEntProp(summon, Prop_Data, "m_iHealth", RoundToNearest(Health));
+		SetEntProp(summon, Prop_Data, "m_iMaxHealth", RoundToNearest(Health));
 		float flPos[3];
 		flPos = pos;
 		flPos[2] += 300.0;
@@ -8663,12 +8656,14 @@ void Const2Modifs_Explosive_End(int victim, StatusEffect Apply_MasterStatusEffec
 	//not an npc, ignore.
 	if(!IsValidEntity(victim) || !b_ThisWasAnNpc[victim])
 		return;
-	float DamageDeal = 10000.0;
+	float DamageDeal = 10.0;
 #if defined ZR
 	DamageDeal = float(CurrentCash);
 	DamageDeal *= 0.25;
 	if(DamageDeal <= 100.0)
 		DamageDeal = 100.0;
+	if(DamageDeal >= 500.0)
+		DamageDeal = 500.0;
 
 	b_NpcIsTeamkiller[victim] = true;
 	Explode_Logic_Custom(DamageDeal,
@@ -8684,13 +8679,31 @@ void Const2Modifs_Explosive_End(int victim, StatusEffect Apply_MasterStatusEffec
 	false,
 	0.01,
 	_,
-	BeheadedKamiBoomInternal);
+	InsaneKnockbackDoExplode);
 	b_NpcIsTeamkiller[victim] = true;
 	ObjectVintulumBomb npc = view_as<ObjectVintulumBomb>(victim);
 	npc.PlayExplodeDo(true, true);
 #endif
 }
 
+float InsaneKnockbackDoExplode(int entity, int victim, float damage, int weapon)
+{
+	if(entity == victim)
+		return 0.0;
+
+	ApplyStatusEffect(entity, victim, "Anti-Waves", 5.0);
+	float VecMe[3]; WorldSpaceCenter(entity, VecMe);
+	float VecEnemy[3]; WorldSpaceCenter(victim, VecEnemy);
+
+	float AngleVec[3];
+	MakeVectorFromPoints(VecMe, VecEnemy, AngleVec);
+	GetVectorAngles(AngleVec, AngleVec);
+
+	AngleVec[0] = -45.0;
+	Custom_Knockback(entity, victim, 1500.0, true, true, true, .OverrideLookAng = AngleVec);
+  
+	return damage;
+}
 
 void Const2Modifs_Stalker_Start(int victim, StatusEffect Apply_MasterStatusEffect, E_StatusEffect Apply_StatusEffect)
 {
