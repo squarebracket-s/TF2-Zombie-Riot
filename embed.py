@@ -33,7 +33,6 @@ ICON_PADDING = 8
 ICON_INNER_PADDING = 2
 
 
-# TODO show support npcs separately
 def generate_waveset_embed(filename, title, wave, wave_max, entries):
 
     global ICON_SIZE, ICON_PADDING, ICON_INNER_PADDING

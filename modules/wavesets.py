@@ -6,6 +6,11 @@ import vdf
 
 """
 TODO
+[ ] Complete const2 support
+[ ] Include main music parts
+[ ] Weapon Attributes (Clip, reserve, firerate, etc.)
+[ ] Class-based templates?
+[ ] Overall improve NPC parsing
 ([ ] sort const and rogue by number, not alphabetically)
 """
 

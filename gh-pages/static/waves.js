@@ -52,7 +52,6 @@ async function parse_waveset(file) {
 
     max_waves = Number(Object.keys(waveset_data["waves"]).reduce((a, b) => Number(a) > Number(b) ? a : b));
     let waveset_info = "";
-    // TODO for loop
     if (waveset_data["authors"]["npc"]!=="") {waveset_info+=`<div>NPCs by: ${waveset_data["authors"]["npc"]}</div>`};
     if (waveset_data["authors"]["format"]!=="") {waveset_info+=`<div>Format by: ${waveset_data["authors"]["format"]}</div>`};
     if (waveset_data["authors"]["raid"]!=="") {waveset_info+=`<div>Raidboss by: ${waveset_data["authors"]["raid"]}</div>`};

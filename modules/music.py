@@ -6,8 +6,8 @@ def parse():
     music_list_html = ""
     music_idx = 0
     for title, modal in sorted(music_by_title.items()):
-        modal["musictitle"].replace("zombiesurvival/","")
-        if modal["file_exists"]:
+        modal["musictitle"] = modal["musictitle"].replace("zombiesurvival/","")
+        if modal["file_exists"] and "intro" not in modal["filepath"]:
             modal['audio"'] = f'audio" id="{music_idx}"' # class="audio" => class="audio" id="<int>"
             music_idx += 1
             music_list_html += util.musicmodal_to_html(modal)
