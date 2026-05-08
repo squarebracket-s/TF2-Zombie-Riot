@@ -8623,20 +8623,19 @@ float Glug_TakeDamage_Spread(int attacker, int victim, StatusEffect Apply_Master
 	int summon = NPC_CreateByName("npc_glug", -1, pos, ang, GetTeam(victim), "");
 	if(summon > MaxClients)
 	{
-		float DamageDeal = float(Waves_GetRoundScale()+1);
-		DamageDeal *= 0.133333;
-		DamageDeal = wave;
-		DamageDeal *= MinibossScalingReturn();
-		DamageDeal *= 0.75;
+		float wave = float(Waves_GetRoundScale()+1);
+		wave *= 0.133333;
+		wave *= MinibossScalingReturn();
+		wave *= 0.75;
 
-		int Health = CharToInt(MinibossHealthScaling(70.0, true));
+		int Health = StringToInt(MinibossHealthScaling(70.0, true));
 
-		fl_Extra_Damage[summon] *= DamageDeal;
+		fl_Extra_Damage[summon] *= wave;
 		fl_Extra_Speed[summon] = fl_Extra_Speed[victim];
 		fl_Extra_RangedArmor[summon] = fl_Extra_RangedArmor[victim];
 		fl_Extra_MeleeArmor[summon] = fl_Extra_MeleeArmor[victim];
-		SetEntProp(summon, Prop_Data, "m_iHealth", RoundToNearest(Health));
-		SetEntProp(summon, Prop_Data, "m_iMaxHealth", RoundToNearest(Health));
+		SetEntProp(summon, Prop_Data, "m_iHealth", Health);
+		SetEntProp(summon, Prop_Data, "m_iMaxHealth", Health);
 		float flPos[3];
 		flPos = pos;
 		flPos[2] += 300.0;
