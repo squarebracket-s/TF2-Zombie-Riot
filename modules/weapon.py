@@ -1,9 +1,16 @@
 # Parse all items, weapons and their paps.
 import util
 import vdf
-#from modules.gamedata import items_game
+from modules.gamedata import items_game
 
 CFG_WEAPONS = vdf.loads(util.read("./TF2-Zombie-Riot/addons/sourcemod/configs/zombie_riot/weapons.cfg"))["Weapons"]
+
+"""
+TODO
+[ ] Weapon Attributes (Clip, reserve, firerate, etc.)
+[ ] Tooltip CSS rework as to fit the attributes
+[ ] Automatically generated weapon icons... someday.
+"""
 
 class Weapon:
     def __init__(self, weapon_name, weapon_data):
@@ -157,36 +164,28 @@ class WeaponPap_Dummy:
     def __init__(self, init_pap_paths):
         self.papskip = "0"
         self.pappaths = init_pap_paths
-
+    
+class GenericItem:
+    def __init__(self, item_data):
+        self.is_item_category="enhanceweapon_click" not in item_data and "cost" not in item_data
+        self.is_weapon=(("desc" in item_data) or ("author" in item_data)) and not "weaponkit" in item_data
+        self.is_weapon_kit="weaponkit" in item_data
+        self.is_trophy="desc" in item_data and "visual_desc_only" in item_data
+        self.is_category="author" not in item_data and "filter" in item_data and "whiteout" not in item_data
+        self.is_text="whiteout" in item_data
 
 def parse():
     util.log("Parsing Weapon List...")
 
     HTML_WEAPON = ""
-    
-    def is_item_category(c):
-        return "enhanceweapon_click" not in c and "cost" not in c
-
-
-    def is_weapon(c):
-        return (("desc" in c) or ("author" in c)) and not "weaponkit" in c
-
-
-    def is_trophy(c):
-        return "desc" in c and "visual_desc_only" in c
-
-
-    def is_category(c):
-        return "author" not in c and "filter" in c and "whiteout" not in c
-
-
     def item_block(key,data,depth,html, tags):
         if "hidden" not in data:
             depth += 1
             html += util.fill_template(util.read("templates/items/item_block_start.html"),{"key":key})
             for item in data:
                 item_data = data[item]
-                if is_trophy(item_data):
+                itm = GenericItem(item_data)
+                if itm.is_trophy:
                     """
                     "Magia Wings [???]"
                         {
@@ -206,12 +205,12 @@ def parse():
                         "wcfghidden": ""
                     }
                     html += util.fill_template(util.read("templates/items/item_preview.html"), context)
-                elif is_weapon(item_data):
+                elif itm.is_weapon:
                     wep = Weapon(item,item_data)
                     tags=wep.add_global_tags(tags)
                     html += wep.tohtml()
                     html += wep.papstohtml()
-                elif "weaponkit" in item_data:
+                elif itm.is_weapon_kit:
                     kit = Weapon(item,item_data)
                     tags=kit.add_global_tags(tags)
                     html += kit.tohtml(wcfghidden=False)
@@ -220,17 +219,17 @@ def parse():
                     def _kitweps():
                         h=""
                         for k,v in item_data.items():
-                            if is_weapon(v):
+                            if GenericItem(v).is_weapon:
                                 kitwep = Weapon(k,v)
                                 h += kitwep.tohtml(wcfghidden=False)
                                 h += kitwep.papstohtml(wcfghidden=False)
                         return h
                     html += f'<div style="margin-left: 10px;">\n{_kitweps()}</div>\n'
-                elif item[0].isupper() and is_category(item_data) or "Perks" in item: # unneeded data is always lowercase...
+                elif item[0].isupper() and itm.is_category or "Perks" in item: # unneeded data is always lowercase...
                     html, tags = item_block(item, item_data, depth, html, tags)
                 elif "Trophies" == item: # Item
                     html, tags = item_block(item, item_data, depth, html, tags)
-                elif "whiteout" in item_data: # Text shown in menu
+                elif itm.is_text: # Text shown in menu
                     html += item + "\n"
             html += "</details>\n"
         return html, tags
@@ -238,7 +237,7 @@ def parse():
 
     tags = []
     for item_category in CFG_WEAPONS:
-        if is_item_category(CFG_WEAPONS[item_category]):
+        if GenericItem(CFG_WEAPONS[item_category]).is_item_category:
             HTML_WEAPON, tags = item_block(item_category,CFG_WEAPONS[item_category],0, HTML_WEAPON, tags)
     
     tags_html = "".join([f"<div class=\"btn\" tabindex=\"0\" onclick=\"filter_set_tag('{tag}');\">#{tag}</div>" for tag in tags])
