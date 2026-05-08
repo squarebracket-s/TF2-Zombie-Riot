@@ -6,15 +6,15 @@ import vdf
 CFG_WEAPONS = vdf.loads(util.read("./TF2-Zombie-Riot/addons/sourcemod/configs/zombie_riot/weapons.cfg"))["Weapons"]
 
 class Weapon:
-    def __init__(self, weapon_name, weapon_data, gtags):
-        self._weapon_name=weapon_name
+    def __init__(self, weapon_name, weapon_data):
+        self._weapon_name,self.name=weapon_name,weapon_name
         self._weapon_data=weapon_data
 
         if "tags" in weapon_data:
-            taglist = weapon_data["tags"].split(";")
-            if "," in weapon_data["tags"]: taglist = weapon_data["tags"].split(",") # crystal shard uses commas instead of semicolons. blame artvin
-            self.tags = " ".join(f"#{tag}" for tag in taglist if tag != "" and len(tag)>2)
-        else: self.tags = ""
+            self.taglist = weapon_data["tags"].split(";")
+            if "," in weapon_data["tags"]: self.taglist = weapon_data["tags"].split(",") # crystal shard uses commas instead of semicolons. blame artvin
+            self.tags = " ".join(f"#{tag}" for tag in self.taglist if tag != "" and len(tag)>2)
+        else: self.tags = ""; self.taglist=[]
 
         if "author" in weapon_data: self.author = f"By {weapon_data["author"]}"
         else: self.author = ""
@@ -59,7 +59,7 @@ class Weapon:
             "wtags": self.tags,
             "wcfghidden": "weapon_cfghidden" if ("hidden" in self._weapon_data) and wcfghidden else "" # paps are hidden by default
         }
-        return util.fill_template(wep.get_paps_html(), context)
+        return util.fill_template(self.get_paps_html(), context)
     
 
     def get_paps_html(self):
@@ -91,10 +91,8 @@ class Weapon:
     
 
     def add_global_tags(self, gtags):
-        if "tags" in weapon_data:
-            taglist = weapon_data["tags"].split(";")
-            for tag in taglist:
-                if tag.capitalize() not in gtags and tag not in gtags and len(tag)>2: gtags.append(tag)
+        for tag in self.taglist:
+            if tag.capitalize() not in gtags and tag not in gtags and len(tag)>2: gtags.append(tag)
         return gtags
 
 class WeaponPap:
@@ -210,12 +208,12 @@ def parse():
                     html += util.fill_template(util.read("templates/items/item_preview.html"), context)
                 elif is_weapon(item_data):
                     wep = Weapon(item,item_data)
-                    tags=wep.add_global_tags()
+                    tags=wep.add_global_tags(tags)
                     html += wep.tohtml()
                     html += wep.papstohtml()
                 elif "weaponkit" in item_data:
                     kit = Weapon(item,item_data)
-                    tags=kit.add_global_tags()
+                    tags=kit.add_global_tags(tags)
                     html += kit.tohtml(wcfghidden=False)
 
                     # kit items (has pap)
@@ -227,7 +225,7 @@ def parse():
                                 h += kitwep.tohtml(wcfghidden=False)
                                 h += kitwep.papstohtml(wcfghidden=False)
                         return h
-                    html += f'<div style="margin-left: 10px;">\n>{_kitweps()}</div>\n'
+                    html += f'<div style="margin-left: 10px;">\n{_kitweps()}</div>\n'
                 elif item[0].isupper() and is_category(item_data) or "Perks" in item: # unneeded data is always lowercase...
                     html, tags = item_block(item, item_data, depth, html, tags)
                 elif "Trophies" == item: # Item
