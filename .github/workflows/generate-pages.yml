@@ -35,7 +35,7 @@ jobs:
         unzip ./CrowbarDecompiler.1.1.zip
 
     - name: Install assimp (SMD importing)
-      run: sudo apt install assimp
+      run: sudo apt install libassimp6
     
     - name: Clone ZR repo
       run: git clone https://github.com/artvin01/TF2-Zombie-Riot
