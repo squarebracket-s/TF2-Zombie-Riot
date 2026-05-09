@@ -25,7 +25,7 @@ jobs:
     
     - name: Download CLI mdl decompiler
       run: Invoke-Webrequest https://github.com/mrglaster/Source-models-decompiler-cmd/releases/download/Update/CrowbarDecompiler.1.1.zip -OutFile CrowbarDecompiler.1.1.zip
-           Expand-Archive .\CrowbarDecompiler.1.1.zip .\
+    - run: Expand-Archive .\CrowbarDecompiler.1.1.zip .\
     
     - run: ls
 
