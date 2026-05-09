@@ -24,14 +24,18 @@ jobs:
       run: git clone https://github.com/artvin01/TF2-Zombie-Riot
     
     - name: Download CLI mdl decompiler
-      run: Invoke-Webrequest https://github.com/mrglaster/Source-models-decompiler-cmd/releases/download/Update/CrowbarDecompiler.1.1.zip -OutFile CrowbarDecompiler.1.1.zip
-    - run: Expand-Archive .\CrowbarDecompiler.1.1.zip .\
+      run: | 
+        Invoke-Webrequest https://github.com/mrglaster/Source-models-decompiler-cmd/releases/download/Update/CrowbarDecompiler.1.1.zip -OutFile CrowbarDecompiler.1.1.zip
+        Expand-Archive .\CrowbarDecompiler.1.1.zip .\
     
     - run: ls
 
     - name: Decompile
-      run: SCOPE=items DEBUG=decompile venv\Scripts\python.exe main.py
-    
+      run: |
+        $env:SCOPE = 'items'
+        $env:DEBUG = 'decompile'
+        venv\Scripts\python.exe main.py
+
     - name: Upload decompiled model data
       uses: actions/upload-artifact@v7
       with:
