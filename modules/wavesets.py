@@ -1,8 +1,6 @@
 # Parse all NPCs & Wavesets (Normal & Custom, wavesets like Construction are yet to be supported.)
-import util, os, subprocess, pathlib, json, time
-import embed, modules.shared
+import util, os, subprocess, pathlib, json, time, embed, modules.shared, vdf
 from collections import defaultdict
-import vdf
 
 """
 TODO

@@ -1,7 +1,16 @@
 # Parse all items, weapons and their paps.
-import util
-import vdf
+import util, vdf, os, subprocess, json
+import trimesh, pyrender, PIL
+trimesh.util.attach_to_log()
+import scipy
+import numpy as np
 #from modules.gamedata import items_game
+
+# Patch pyassimp to prevent null pointer error
+util.write("venv/lib/python3.14/site-packages/pyassimp/core.py", util.read("venv/lib/python3.14/site-packages/pyassimp/core.py").replace("""
+                    else:""","""
+                    elif obj:"""))
+from pyassimp import load
 
 CFG_WEAPONS = vdf.loads(util.read("./TF2-Zombie-Riot/addons/sourcemod/configs/zombie_riot/weapons.cfg"))["Weapons"]
 
@@ -13,6 +22,7 @@ TODO
 [ ] Fix: When searching for weapon kit, its weapons may not be shown if the name differs from the kit name
 """
 
+DECOMPILED=[]
 class Weapon:
     def __init__(self, weapon_name, weapon_data):
         self._weapon_name,self.name=weapon_name,weapon_name
@@ -38,13 +48,121 @@ class Weapon:
         else: self.description = ""
 
         if "level" in weapon_data:
-            self.lvl = f"Level: {weapon_data["level"]}  \n"
+            self.lvl = f"<div>Level: {weapon_data["level"]}</div>"
         else:
             self.lvl = ""
 
+        # If weapon uses custom model, fetch source SMD file from bodygroup
+        if "model_weapon_override" in weapon_data:
+            if weapon_data["model_weapon_override"].startswith("models/zombie_riot/weapons/"):
+                pure_filename = weapon_data["model_weapon_override"].split("/")[-1].split(".")[0]
+                if ("decompile" in util.DEBUG) and (weapon_data["model_weapon_override"] not in DECOMPILED):
+                    # Decompile model
+                    self.model_path = f"TF2-Zombie-Riot\\{weapon_data["model_weapon_override"]}"
+                    subprocess.run(["./CrowbarDecompiler(1.1).exe",self.model_path,"decompiled\\"])
+                    DECOMPILED.append(weapon_data["model_weapon_override"])
+                    
+                    # Generate bodygroup mappings for model
+                    qcdata = util.read(f"decompiled/{pure_filename}.qc")
+                    bodygroup_idx = 1
+                    bodygroup_map = {}
+                    for line in qcdata.split("\n"):
+                        if line.strip().startswith("studio"):
+                            bodygroup_map[2**(bodygroup_idx-1)]=line.split(" ")[-1].strip('"')
+                            bodygroup_idx += 1
+                    util.write(f"decompiled/{pure_filename}.json", json.dumps(bodygroup_map,indent=2))
+                else: ### Generate icon
+                    """
+                    Issues:
+                    - Objects aren't in frame in the final image
+                    """
+                    # Get SMD file
+                    if "weapon_bodygroup" in weapon_data: self.mdl_bodygroup = weapon_data["weapon_bodygroup"]
+                    else: self.mdl_bodygroup = "1"
+                    self.smd_path = "decompiled/"+json.loads(util.read(f"decompiled/{pure_filename}.json"))[self.mdl_bodygroup] # TODO cache
+                    # load pyassimp & mesh
+                    with load(self.smd_path) as assimp_scene:
+                        assert len(assimp_scene.meshes)
+                        assimp_mesh = assimp_scene.meshes[0]
+                        assert len(assimp_mesh.vertices)
+                    trimesh_mesh = trimesh.Trimesh(vertices=assimp_mesh.vertices,faces=assimp_mesh.faces)
+                    trimesh_mesh.apply_scale(0.1)
+                    
+                    # Bounds calculation
+                    # assimp: yxz?
+                    longest_side = 0
+                    max_vals = [0,0,0]
+                    for n,coordinate in enumerate(trimesh_mesh.bounds[0]):
+                        val = abs(coordinate-trimesh_mesh.bounds[1][n])
+                        if val > max(max_vals):
+                            longest_side = n
+                        max_vals[n]=max(max_vals[n],val)
+                    center = np.mean( np.array(trimesh_mesh.bounds), axis=0 )
+                    truecenter = np.mean( np.array(trimesh_mesh.vertices), axis=0 )
+                    if util.LOCAL:
+                        print(weapon_name,"----------------------------")
+                        print("bounds:",trimesh_mesh.bounds)
+                        print("center:",center)
+                        print("longest_side:",longest_side)
+                        print("max_vals:",max_vals)
+                        print("vertices:",len(trimesh_mesh.vertices))
+                    
+                    # Pyrender from trimesh
+                    pyrender_mesh = pyrender.Mesh.from_trimesh(trimesh_mesh)
+                    scene = pyrender.Scene(bg_color=[180/255, 184/255, 171/255])
+                    node = pyrender.Node(mesh=pyrender_mesh, matrix=np.eye(4))
+                    scene.add_node(node)
 
-    def tohtml(self,wcfghidden=True,wtags=None):
+                    # Center object & position camera
+                    vertical_angle = 35
+                    offset = np.array([
+                        -max_vals[longest_side]*int(longest_side==2),
+                        max_vals[longest_side]*(vertical_angle/45), # up/down
+                        max_vals[longest_side]*int(longest_side<=1),
+                    ])
+                    angle = [
+                        -vertical_angle,
+                        -90*int(longest_side==2),
+                        0,
+                    ]
+                    scene.set_pose(node, scipy.spatial.transform.RigidTransform.from_components(
+                        translation = -center,
+                        rotation = scipy.spatial.transform.Rotation.from_euler("xyz",[0,0,0],degrees=True)
+                    ).as_matrix())
+                    camera = pyrender.OrthographicCamera(xmag=1, ymag=1)
+                    camera_pose = scipy.spatial.transform.RigidTransform.from_components(
+                        translation = offset,
+                        rotation = scipy.spatial.transform.Rotation.from_euler("xyz",angle,degrees=True)
+                    )
+                    scene.add(camera, pose=camera_pose.as_matrix())
+                    # Render scene
+                    if longest_side == 2:
+                        width,height = max_vals[2], max_vals[1]
+                    elif longest_side == 1:
+                        width,height = max_vals[0], max_vals[1]
+                    else:
+                        width,height = max_vals[0], max_vals[1]
+                    mult = 100
+                    r = pyrender.OffscreenRenderer(width*mult, height*mult)
+                    color, depth = r.render(scene)
+                    plw = PIL.Image.fromarray(color).convert('RGB')
+                    if not os.path.isdir("gh-pages/icons"): subprocess.run(["mkdir", "gh-pages/icons"])
+                    plw.save(f"gh-pages/icons/{self.name}.png")
+                    self.has_model = True
+                    #pyrender.Viewer(scene)
+                    
+
+
+    def to_html(self,wcfghidden=True,wtags=None):
         hidden_str = "<i>Hidden</i>\n" if "hidden" in self._weapon_data else ""
+        # TODO defaultdict to clean up
+        if "model_weapon_override" in self._weapon_data:
+            if self._weapon_data["model_weapon_override"].startswith("models/zombie_riot/weapons/"):
+                icon = f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="icons/{self.name}.png">'
+            else:
+                icon = ""
+        else:
+            icon = ""
         context = {
             "name": self.name,
             "data_item": util.fill_template(
@@ -53,7 +171,7 @@ class Weapon:
                     "tags": self.tags,
                     "author": util.apply_morecolors(self.author),
                     "cost": self.cost,
-                    "desc": f"{hidden_str}<div>{self.lvl}</div>{util.divfornewline(self.description)}",
+                    "desc": f"{hidden_str}{self.lvl}{util.divfornewline(self.description)}{icon}",
                 }    
             ),
             "wtags": wtags or self.tags,
@@ -62,7 +180,7 @@ class Weapon:
         return util.fill_template(util.read("templates/items/item_preview.html"), context)
     
 
-    def papstohtml(self,wcfghidden=True,wtags=None):
+    def paps_to_html(self,wcfghidden=True,wtags=None):
         context = {
             "wtags": wtags or self.tags,
             "wcfghidden": "weapon_cfghidden" if ("hidden" in self._weapon_data) and wcfghidden else "" # paps are hidden by default
@@ -209,12 +327,12 @@ def parse():
                 elif itm.is_weapon:
                     wep = Weapon(item,item_data)
                     tags=wep.add_global_tags(tags)
-                    contents += wep.tohtml()
-                    contents += wep.papstohtml()
+                    contents += wep.to_html()
+                    contents += wep.paps_to_html()
                 elif itm.is_weapon_kit:
                     kit = Weapon(item,item_data)
                     tags=kit.add_global_tags(tags)
-                    contents += kit.tohtml(wcfghidden=False)
+                    contents += kit.to_html(wcfghidden=False)
 
                     # kit items (has pap)
                     def _kitweps():
@@ -222,15 +340,15 @@ def parse():
                         for k,v in item_data.items():
                             if GenericItem(v).is_weapon:
                                 kitwep = Weapon(k,v)
-                                h += kitwep.tohtml(wcfghidden=False, wtags=kit.tags)
-                                h += kitwep.papstohtml(wcfghidden=False, wtags=kit.tags)
+                                h += kitwep.to_html(wcfghidden=False, wtags=kit.tags)
+                                h += kitwep.paps_to_html(wcfghidden=False, wtags=kit.tags)
                         return h
                     contents += f'<div style="margin-left: 10px;">\n{_kitweps()}</div>\n'
-                elif item[0].isupper() and itm.is_category or "Perks" in item: # unneeded data is always lowercase...
+                elif item[0].isupper() and itm.is_category or "Perks" in item and not ("decompile" in util.DEBUG): # unneeded data is always lowercase...
                     contents, tags = item_block(item, item_data, depth, contents, tags)
-                elif "Trophies" == item: # Item
+                elif "Trophies" == item and not ("decompile" in util.DEBUG): # Item
                     contents, tags = item_block(item, item_data, depth, contents, tags)
-                elif itm.is_text: # Text shown in menu
+                elif itm.is_text and not ("decompile" in util.DEBUG): # Text shown in menu
                     contents += f"{item}\n"
             html += f'<details>\n    <summary class="noselect">{key}</summary>{contents}</details>\n'
         return html, tags
@@ -241,9 +359,10 @@ def parse():
         if GenericItem(CFG_WEAPONS[item_category]).is_item_category:
             HTML_WEAPON, tags = item_block(item_category,CFG_WEAPONS[item_category],0, HTML_WEAPON, tags)
     
-    tags_html = "".join([f"<div class=\"btn\" tabindex=\"0\" onclick=\"filter_set_tag('{tag}');\">#{tag}</div>" for tag in tags])
-    context = {
-        "gtags": tags_html,
-        "itemdata": HTML_WEAPON
-    }
-    util.write("gh-pages/items.html", util.fill_template(util.read("templates/items/items.html"), context))
+    if not ("decompile" in util.DEBUG):
+        tags_html = "".join([f"<div class=\"btn\" tabindex=\"0\" onclick=\"filter_set_tag('{tag}');\">#{tag}</div>" for tag in tags])
+        context = {
+            "gtags": tags_html,
+            "itemdata": HTML_WEAPON
+        }
+        util.write("gh-pages/items.html", util.fill_template(util.read("templates/items/items.html"), context))

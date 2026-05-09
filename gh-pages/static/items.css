@@ -73,6 +73,26 @@ input[type=search] {
   text-align: left;
 }
 
+
+/* temp weapon icon css */
+.notice {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    margin-left:-20px;
+    width:fit-content;
+}
+
+.notice img {
+    height: 16px;
+    width: auto;
+    margin-right: 21px;
+}
+
+.weapon_preview {
+    max-height: 32px;
+}
+
 .hover:hover .tooltip, .hover:focus .tooltip {
     opacity:1;
     top: 125%;

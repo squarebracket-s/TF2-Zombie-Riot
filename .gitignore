@@ -5,6 +5,7 @@ __pycache__/
 .obsidian/
 venv/
 TF2-Zombie-Riot/
+decompiled/
 
 # NOTE unused premedia icons in tf2_zr_wikigen archive
 premedia_icons_unused/
@@ -27,3 +28,4 @@ logs.txt
 run_rogue.sh
 # only ignore json in root dir
 /*.json
+*.exe

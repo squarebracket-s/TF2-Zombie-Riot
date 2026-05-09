@@ -1,5 +1,4 @@
-import util, json
-import vdf
+import util, json, vdf
 from requests.structures import CaseInsensitiveDict
 
 PHRASES = [
@@ -19,7 +18,7 @@ PHRASES = [
     # skilltree.py
     "zombieriot.phrases.skilltree.txt"
 ]
-util.log("Parsing all phrases...")
+util.log("Parsing phrases...")
 for p in PHRASES:
     util.log(f"> {p}")
     util.PHRASES.append(CaseInsensitiveDict(vdf.loads(util.read(f"./TF2-Zombie-Riot/addons/sourcemod/translations/{p}"))["Phrases"]))

@@ -5,3 +5,7 @@ urllib3
 vtf2img
 beautifulsoup4
 ruamel.yaml
+pyassimp
+setuptools
+trimesh
+pyrender

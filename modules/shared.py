@@ -1,5 +1,4 @@
-import util, os
-import json
+import util, json, os
 
 FLAG_MAPPINGS = {
     "MVM_CLASS_FLAG_NONE": "", #// Show Nothing

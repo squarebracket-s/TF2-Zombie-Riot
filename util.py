@@ -15,7 +15,6 @@ JSONEncoder.default = wrapped_default
 
 # --------------------------- ENV ---------------------------
 
-# wavesets, npc, ...
 DEBUG = []
 if "DEBUG" in os.environ:
     DEBUG = [x.lower() for x in os.environ["DEBUG"].split(",")]
@@ -30,6 +29,7 @@ if "TYPESCOPE" in os.environ:
 else:
     WAVESETS_TYPESCOPE = ["Setup", "Custom", "Rogue", "Betting", "Construction"]
 
+LOCAL = os.path.isdir("gh-pages/icons/")
 LOG_REDACT = None
 if "LOG_REDACT" in os.environ:
     LOG_REDACT = os.environ["LOG_REDACT"]
