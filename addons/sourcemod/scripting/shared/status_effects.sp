@@ -9560,14 +9560,14 @@ static void CallOfHeartBroken_Timer(int entity, StatusEffect Apply_MasterStatusE
 		ApplyStatusEffect(entity, entity, "Call of the Heartbroken Weakened", 0.5);
 		if(IsValidEntity(Apply_StatusEffect.WearableUse))
 		{
-			SetEntityRenderColor(Apply_StatusEffect.WearableUse, 125, 0, 0, 255);
+			SetEntityRenderColor(EntRefToEntIndex(Apply_StatusEffect.WearableUse), 125, 0, 0, 255);
 		}
 	}
 	else
 	{
 		if(IsValidEntity(Apply_StatusEffect.WearableUse))
 		{
-			SetEntityRenderColor(Apply_StatusEffect.WearableUse, 65, 0, 125, 255);
+			SetEntityRenderColor(EntRefToEntIndex(Apply_StatusEffect.WearableUse), 65, 0, 125, 255);
 		}
 	}
 	
