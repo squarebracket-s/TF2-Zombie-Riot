@@ -23,7 +23,7 @@ jobs:
 
     - name: Install wine (MDL decompiling) # it is still possible to use windows if phrase parsing is avoided but this might just be faster
       run: |
-        sudo apt install wine64
+        sudo apt install wine64 xvfb
 
     - name: Download mrglaster/Source-models-decompiler-cmd (MDL decompiling)
       run: | 
@@ -39,7 +39,11 @@ jobs:
       run: git clone https://github.com/artvin01/TF2-Zombie-Riot
 
     - name: Parse ZR repo code
-      run: ./venv/bin/python main.py
+      env:
+        DISPLAY: ":0.0"
+      run: |
+        Xvfb :0 -screen 0 1024x768x16 &
+        ./venv/bin/python main.py
     
     - name: Upload static files as artifact
       id: deployment
