@@ -34,6 +34,7 @@ jobs:
         wget https://github.com/mrglaster/Source-models-decompiler-cmd/releases/download/Update/CrowbarDecompiler.1.1.zip
         unzip ./CrowbarDecompiler.1.1.zip
         chmod +x "./CrowbarDecompiler(1.1).exe"
+        ls
 
     - name: Install assimp (SMD importing)
       run: sudo apt install libassimp-dev
