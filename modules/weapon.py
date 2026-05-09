@@ -7,10 +7,11 @@ import numpy as np
 #from modules.gamedata import items_game
 
 # Patch pyassimp to prevent null pointer error
-util.write("venv/lib/python3.14/site-packages/pyassimp/core.py", util.read("venv/lib/python3.14/site-packages/pyassimp/core.py").replace("""
-                    else:""","""
-                    elif obj:"""))
-from pyassimp import load
+if os.path.isdir("venv/lib/python3.14/site-packages/pyassimp/"):
+    util.write("venv/lib/python3.14/site-packages/pyassimp/core.py", util.read("venv/lib/python3.14/site-packages/pyassimp/core.py").replace("""
+                        else:""","""
+                        elif obj:"""))
+    from pyassimp import load
 
 CFG_WEAPONS = vdf.loads(util.read("./TF2-Zombie-Riot/addons/sourcemod/configs/zombie_riot/weapons.cfg"))["Weapons"]
 
@@ -71,7 +72,7 @@ class Weapon:
                             bodygroup_map[2**(bodygroup_idx-1)]=line.split(" ")[-1].strip('"')
                             bodygroup_idx += 1
                     util.write(f"decompiled/{pure_filename}.json", json.dumps(bodygroup_map,indent=2))
-                else: ### Generate icon
+                elif ("decompile" not in util.DEBUG): ### Generate icon
                     """
                     Issues:
                     - Objects aren't in frame in the final image
