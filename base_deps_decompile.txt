@@ -1,4 +1,0 @@
-vtf2img
-bs4
-vdf
-requests

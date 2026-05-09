@@ -8,9 +8,9 @@ import numpy as np
 
 # Patch pyassimp to prevent null pointer error
 if os.path.isdir("venv/lib/python3.14/site-packages/pyassimp/"):
-    util.write("venv/lib/python3.14/site-packages/pyassimp/core.py", util.read("venv/lib/python3.14/site-packages/pyassimp/core.py").replace("""
-                        else:""","""
-                        elif obj:"""))
+    util.write("venv/lib/python3.14/site-packages/pyassimp/core.py", util.read("venv/lib/python3.14/site-packages/pyassimp/core.py").replace("""else:
+                        setattr(target, name, [obj[i] for i in range(length)])""","""elif obj:
+                        setattr(target, name, [obj[i] for i in range(length)])"""))
     from pyassimp import load
 
 CFG_WEAPONS = vdf.loads(util.read("./TF2-Zombie-Riot/addons/sourcemod/configs/zombie_riot/weapons.cfg"))["Weapons"]
@@ -57,7 +57,7 @@ class Weapon:
         if "model_weapon_override" in weapon_data:
             if weapon_data["model_weapon_override"].startswith("models/zombie_riot/weapons/"):
                 pure_filename = weapon_data["model_weapon_override"].split("/")[-1].split(".")[0]
-                if ("decompile" in util.DEBUG) and (weapon_data["model_weapon_override"] not in DECOMPILED):
+                if (weapon_data["model_weapon_override"] not in DECOMPILED):
                     # Decompile model
                     self.model_path = f"TF2-Zombie-Riot\\{weapon_data["model_weapon_override"]}"
                     subprocess.run(["./CrowbarDecompiler(1.1).exe",self.model_path,"decompiled\\"])
@@ -72,85 +72,84 @@ class Weapon:
                             bodygroup_map[2**(bodygroup_idx-1)]=line.split(" ")[-1].strip('"')
                             bodygroup_idx += 1
                     util.write(f"decompiled/{pure_filename}.json", json.dumps(bodygroup_map,indent=2))
-                elif ("decompile" not in util.DEBUG): ### Generate icon
-                    """
-                    Issues:
-                    - Objects aren't in frame in the final image
-                    """
-                    # Get SMD file
-                    if "weapon_bodygroup" in weapon_data: self.mdl_bodygroup = weapon_data["weapon_bodygroup"]
-                    else: self.mdl_bodygroup = "1"
-                    self.smd_path = "decompiled/"+json.loads(util.read(f"decompiled/{pure_filename}.json"))[self.mdl_bodygroup] # TODO cache
-                    # load pyassimp & mesh
-                    with load(self.smd_path) as assimp_scene:
-                        assert len(assimp_scene.meshes)
-                        assimp_mesh = assimp_scene.meshes[0]
-                        assert len(assimp_mesh.vertices)
-                    trimesh_mesh = trimesh.Trimesh(vertices=assimp_mesh.vertices,faces=assimp_mesh.faces)
-                    trimesh_mesh.apply_scale(0.1)
-                    
-                    # Bounds calculation
-                    # assimp: yxz?
-                    longest_side = 0
-                    max_vals = [0,0,0]
-                    for n,coordinate in enumerate(trimesh_mesh.bounds[0]):
-                        val = abs(coordinate-trimesh_mesh.bounds[1][n])
-                        if val > max(max_vals):
-                            longest_side = n
-                        max_vals[n]=max(max_vals[n],val)
-                    center = np.mean( np.array(trimesh_mesh.bounds), axis=0 )
-                    truecenter = np.mean( np.array(trimesh_mesh.vertices), axis=0 )
-                    if util.LOCAL:
-                        print(weapon_name,"----------------------------")
-                        print("bounds:",trimesh_mesh.bounds)
-                        print("center:",center)
-                        print("longest_side:",longest_side)
-                        print("max_vals:",max_vals)
-                        print("vertices:",len(trimesh_mesh.vertices))
-                    
-                    # Pyrender from trimesh
-                    pyrender_mesh = pyrender.Mesh.from_trimesh(trimesh_mesh)
-                    scene = pyrender.Scene(bg_color=[180/255, 184/255, 171/255])
-                    node = pyrender.Node(mesh=pyrender_mesh, matrix=np.eye(4))
-                    scene.add_node(node)
+                """
+                Issues:
+                - Objects aren't in frame in the final image
+                """
+                # Get SMD file
+                if "weapon_bodygroup" in weapon_data: self.mdl_bodygroup = weapon_data["weapon_bodygroup"]
+                else: self.mdl_bodygroup = "1"
+                self.smd_path = "decompiled/"+json.loads(util.read(f"decompiled/{pure_filename}.json"))[self.mdl_bodygroup] # TODO cache
+                # load pyassimp & mesh
+                with load(self.smd_path) as assimp_scene:
+                    assert len(assimp_scene.meshes)
+                    assimp_mesh = assimp_scene.meshes[0]
+                    assert len(assimp_mesh.vertices)
+                trimesh_mesh = trimesh.Trimesh(vertices=assimp_mesh.vertices,faces=assimp_mesh.faces)
+                trimesh_mesh.apply_scale(0.1)
+                
+                # Bounds calculation
+                # assimp: yxz?
+                longest_side = 0
+                max_vals = [0,0,0]
+                for n,coordinate in enumerate(trimesh_mesh.bounds[0]):
+                    val = abs(coordinate-trimesh_mesh.bounds[1][n])
+                    if val > max(max_vals):
+                        longest_side = n
+                    max_vals[n]=max(max_vals[n],val)
+                center = np.mean( np.array(trimesh_mesh.bounds), axis=0 )
+                truecenter = np.mean( np.array(trimesh_mesh.vertices), axis=0 )
+                if util.LOCAL:
+                    print(weapon_name,"----------------------------")
+                    print("bounds:",trimesh_mesh.bounds)
+                    print("center:",center)
+                    print("longest_side:",longest_side)
+                    print("max_vals:",max_vals)
+                    print("vertices:",len(trimesh_mesh.vertices))
+                
+                # Pyrender from trimesh
+                pyrender_mesh = pyrender.Mesh.from_trimesh(trimesh_mesh)
+                scene = pyrender.Scene(bg_color=[180/255, 184/255, 171/255])
+                node = pyrender.Node(mesh=pyrender_mesh, matrix=np.eye(4))
+                scene.add_node(node)
 
-                    # Center object & position camera
-                    vertical_angle = 35
-                    offset = np.array([
-                        -max_vals[longest_side]*int(longest_side==2),
-                        max_vals[longest_side]*(vertical_angle/45), # up/down
-                        max_vals[longest_side]*int(longest_side<=1),
-                    ])
-                    angle = [
-                        -vertical_angle,
-                        -90*int(longest_side==2),
-                        0,
-                    ]
-                    scene.set_pose(node, scipy.spatial.transform.RigidTransform.from_components(
-                        translation = -center,
-                        rotation = scipy.spatial.transform.Rotation.from_euler("xyz",[0,0,0],degrees=True)
-                    ).as_matrix())
-                    camera = pyrender.OrthographicCamera(xmag=1, ymag=1)
-                    camera_pose = scipy.spatial.transform.RigidTransform.from_components(
-                        translation = offset,
-                        rotation = scipy.spatial.transform.Rotation.from_euler("xyz",angle,degrees=True)
-                    )
-                    scene.add(camera, pose=camera_pose.as_matrix())
-                    # Render scene
-                    if longest_side == 2:
-                        width,height = max_vals[2], max_vals[1]
-                    elif longest_side == 1:
-                        width,height = max_vals[0], max_vals[1]
-                    else:
-                        width,height = max_vals[0], max_vals[1]
-                    mult = 100
-                    r = pyrender.OffscreenRenderer(width*mult, height*mult)
-                    color, depth = r.render(scene)
-                    plw = PIL.Image.fromarray(color).convert('RGB')
-                    if not os.path.isdir("gh-pages/icons"): subprocess.run(["mkdir", "gh-pages/icons"])
-                    plw.save(f"gh-pages/icons/{self.name}.png")
-                    self.has_model = True
-                    #pyrender.Viewer(scene)
+                # Center object & position camera
+                vertical_angle = 35
+                offset = np.array([
+                    -max_vals[longest_side]*int(longest_side==2),
+                    max_vals[longest_side]*(vertical_angle/45), # up/down
+                    max_vals[longest_side]*int(longest_side<=1),
+                ])
+                angle = [
+                    -vertical_angle,
+                    -90*int(longest_side==2),
+                    0,
+                ]
+                scene.set_pose(node, scipy.spatial.transform.RigidTransform.from_components(
+                    translation = -center,
+                    rotation = scipy.spatial.transform.Rotation.from_euler("xyz",[0,0,0],degrees=True)
+                ).as_matrix())
+                camera = pyrender.OrthographicCamera(xmag=1, ymag=1)
+                camera_pose = scipy.spatial.transform.RigidTransform.from_components(
+                    translation = offset,
+                    rotation = scipy.spatial.transform.Rotation.from_euler("xyz",angle,degrees=True)
+                )
+                scene.add(camera, pose=camera_pose.as_matrix())
+                # Render scene
+                if longest_side == 2:
+                    width,height = max_vals[2], max_vals[1]
+                elif longest_side == 1:
+                    width,height = max_vals[0], max_vals[1]
+                else:
+                    width,height = max_vals[0], max_vals[1]
+                mult = 100
+                r = pyrender.OffscreenRenderer(width*mult, height*mult)
+                color, depth = r.render(scene)
+                plw = PIL.Image.fromarray(color).convert('RGB')
+                if not os.path.isdir("gh-pages/icons"): subprocess.run(["mkdir", "gh-pages/icons"])
+                plw.save(f"gh-pages/icons/{self.name}.png")
+                self.has_model = True
+                #pyrender.Viewer(scene)
                     
 
 
