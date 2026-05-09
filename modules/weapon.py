@@ -1,7 +1,7 @@
 # Parse all items, weapons and their paps.
 import util
 import vdf
-from modules.gamedata import items_game
+#from modules.gamedata import items_game
 
 CFG_WEAPONS = vdf.loads(util.read("./TF2-Zombie-Riot/addons/sourcemod/configs/zombie_riot/weapons.cfg"))["Weapons"]
 
@@ -10,6 +10,7 @@ TODO
 [ ] Weapon Attributes (Clip, reserve, firerate, etc.)
 [ ] Tooltip CSS rework as to fit the attributes
 [ ] Automatically generated weapon icons... someday.
+[ ] Fix: When searching for weapon kit, its weapons may not be shown if the name differs from the kit name
 """
 
 class Weapon:
@@ -19,7 +20,7 @@ class Weapon:
 
         if "tags" in weapon_data:
             self.taglist = weapon_data["tags"].split(";")
-            if "," in weapon_data["tags"]: self.taglist = weapon_data["tags"].split(",") # crystal shard uses commas instead of semicolons. blame artvin
+            if "," in weapon_data["tags"]: self.taglist = weapon_data["tags"].split(",") # crystal shard uses commas instead of semicolons. blame artvin XXX: Source repo issue
             self.tags = " ".join(f"#{tag}" for tag in self.taglist if tag != "" and len(tag)>2)
         else: self.tags = ""; self.taglist=[]
 
@@ -42,7 +43,7 @@ class Weapon:
             self.lvl = ""
 
 
-    def tohtml(self,wcfghidden=True):
+    def tohtml(self,wcfghidden=True,wtags=None):
         hidden_str = "<i>Hidden</i>\n" if "hidden" in self._weapon_data else ""
         context = {
             "name": self.name,
@@ -55,15 +56,15 @@ class Weapon:
                     "desc": f"{hidden_str}<div>{self.lvl}</div>{util.divfornewline(self.description)}",
                 }    
             ),
-            "wtags": self.tags,
+            "wtags": wtags or self.tags,
             "wcfghidden": "weapon_cfghidden hidden" if ("hidden" in self._weapon_data) and wcfghidden else ""
         }
         return util.fill_template(util.read("templates/items/item_preview.html"), context)
     
 
-    def papstohtml(self,wcfghidden=True):
+    def papstohtml(self,wcfghidden=True,wtags=None):
         context = {
-            "wtags": self.tags,
+            "wtags": wtags or self.tags,
             "wcfghidden": "weapon_cfghidden" if ("hidden" in self._weapon_data) and wcfghidden else "" # paps are hidden by default
         }
         return util.fill_template(self.get_paps_html(), context)
@@ -178,10 +179,10 @@ def parse():
     util.log("Parsing Weapon List...")
 
     HTML_WEAPON = ""
-    def item_block(key,data,depth,html, tags):
+    def item_block(key, data, depth, html, tags):
         if "hidden" not in data:
             depth += 1
-            html += util.fill_template(util.read("templates/items/item_block_start.html"),{"key":key})
+            contents=""
             for item in data:
                 item_data = data[item]
                 itm = GenericItem(item_data)
@@ -204,16 +205,16 @@ def parse():
                         "wtags": "",
                         "wcfghidden": ""
                     }
-                    html += util.fill_template(util.read("templates/items/item_preview.html"), context)
+                    contents += util.fill_template(util.read("templates/items/item_preview.html"), context)
                 elif itm.is_weapon:
                     wep = Weapon(item,item_data)
                     tags=wep.add_global_tags(tags)
-                    html += wep.tohtml()
-                    html += wep.papstohtml()
+                    contents += wep.tohtml()
+                    contents += wep.papstohtml()
                 elif itm.is_weapon_kit:
                     kit = Weapon(item,item_data)
                     tags=kit.add_global_tags(tags)
-                    html += kit.tohtml(wcfghidden=False)
+                    contents += kit.tohtml(wcfghidden=False)
 
                     # kit items (has pap)
                     def _kitweps():
@@ -221,17 +222,17 @@ def parse():
                         for k,v in item_data.items():
                             if GenericItem(v).is_weapon:
                                 kitwep = Weapon(k,v)
-                                h += kitwep.tohtml(wcfghidden=False)
-                                h += kitwep.papstohtml(wcfghidden=False)
+                                h += kitwep.tohtml(wcfghidden=False, wtags=kit.tags)
+                                h += kitwep.papstohtml(wcfghidden=False, wtags=kit.tags)
                         return h
-                    html += f'<div style="margin-left: 10px;">\n{_kitweps()}</div>\n'
+                    contents += f'<div style="margin-left: 10px;">\n{_kitweps()}</div>\n'
                 elif item[0].isupper() and itm.is_category or "Perks" in item: # unneeded data is always lowercase...
-                    html, tags = item_block(item, item_data, depth, html, tags)
+                    contents, tags = item_block(item, item_data, depth, contents, tags)
                 elif "Trophies" == item: # Item
-                    html, tags = item_block(item, item_data, depth, html, tags)
+                    contents, tags = item_block(item, item_data, depth, contents, tags)
                 elif itm.is_text: # Text shown in menu
-                    html += item + "\n"
-            html += "</details>\n"
+                    contents += f"{item}\n"
+            html += f'<details>\n    <summary class="noselect">{key}</summary>{contents}</details>\n'
         return html, tags
 
 

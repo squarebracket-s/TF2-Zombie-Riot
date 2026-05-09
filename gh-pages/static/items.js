@@ -27,8 +27,16 @@ function filter_set_cfghidden(checkbox) {
 }
 function filter() {
     const r = document.getElementsByTagName("details");
+    let all_hidden = true;
     for (var i=0, item; item = r[i]; i++) {
-        remove_items_by_tag(item);
+        let has_visible_items = remove_items_by_tag(item);
+        if (has_visible_items) {all_hidden=false};
+    }
+    const noitems = document.getElementById("noitems");
+    if (all_hidden) {
+        noitems.classList.remove("hidden");
+    } else {
+        noitems.classList.add("hidden");
     }
 }
 
@@ -94,6 +102,7 @@ function remove_items_by_tag(root) {
     } else {
         root.classList.remove("hidden");
     }
+    return has_visible_items
 }
 
 /* Filter by CUSTOM STRING */

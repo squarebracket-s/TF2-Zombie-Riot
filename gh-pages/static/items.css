@@ -78,6 +78,10 @@ input[type=search] {
     top: 125%;
 }
 
+/* no items found spacing */
+#noitems {
+    margin-top: 30px;
+}
 
 /* weapon content */
 
