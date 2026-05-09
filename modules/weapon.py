@@ -59,8 +59,8 @@ class Weapon:
                 pure_filename = weapon_data["model_weapon_override"].split("/")[-1].split(".")[0]
                 if (weapon_data["model_weapon_override"] not in DECOMPILED):
                     # Decompile model
-                    self.model_path = f"TF2-Zombie-Riot\\{weapon_data["model_weapon_override"]}"
-                    subprocess.run(['"./CrowbarDecompiler(1.1).exe"',self.model_path,"decompiled\\"])
+                    self.model_path = f"TF2-Zombie-Riot/{weapon_data["model_weapon_override"]}"
+                    subprocess.run(["./CrowbarDecompiler\\(1.1\\).exe",self.model_path,"decompiled/"])
                     DECOMPILED.append(weapon_data["model_weapon_override"])
                     
                     # Generate bodygroup mappings for model

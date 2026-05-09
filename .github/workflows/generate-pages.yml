@@ -21,7 +21,7 @@ jobs:
     - name: Setup venv
       run: python -m venv venv; ./venv/bin/pip install -r requirements.txt
 
-    - name: Install wine # it is still possible to use windows if phrase parsing is avoided but this might just be faster
+    - name: Install wine (MDL decompiling) # it is still possible to use windows if phrase parsing is avoided but this might just be faster
       run: |
         sudo dpkg --add-architecture i386
         wget -qO - https://dl.winehq.org/wine-builds/winehq.key | sudo apt-key add -
@@ -29,7 +29,7 @@ jobs:
         sudo apt-add-repository "deb https://dl.winehq.org/wine-builds/ubuntu $(lsb_release -cs) main"
         sudo apt install --install-recommends winehq-stable
 
-    - name: Download CLI mdl decompiler
+    - name: Download mrglaster/Source-models-decompiler-cmd (MDL decompiling)
       run: | 
         wget https://github.com/mrglaster/Source-models-decompiler-cmd/releases/download/Update/CrowbarDecompiler.1.1.zip
         unzip ./CrowbarDecompiler.1.1.zip
