@@ -60,7 +60,7 @@ class Weapon:
                 if (weapon_data["model_weapon_override"] not in DECOMPILED):
                     # Decompile model
                     self.model_path = f"TF2-Zombie-Riot/{weapon_data["model_weapon_override"]}"
-                    subprocess.run(["wine", "CrowbarDecompiler(1.1).exe",self.model_path,"decompiled/"])
+                    subprocess.run(["WINEDEBUG=-all", "wine", "CrowbarDecompiler(1.1).exe",self.model_path,"decompiled/"])
                     DECOMPILED.append(weapon_data["model_weapon_override"])
                     
                     # Generate bodygroup mappings for model
