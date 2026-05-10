@@ -31,12 +31,12 @@ jobs:
       - name: Decompile
         run: |
           venv\Scripts\python.exe modules\weapon-decompile.py
-
+      
       - name: Upload decompiled model data
-        uses: actions/upload-artifact@v7
+        uses: actions/cache/save@v5
         with:
           path: decompiled/
-          name: decompiled_models
+          key: decompiled-${{ github.sha }}
   build:
     needs: decompile
     name: generate-pages
@@ -57,11 +57,11 @@ jobs:
     - name: Clone ZR repo
       run: git clone https://github.com/artvin01/TF2-Zombie-Riot --depth 1
 
-    - name: Fetch decompiled model data
-      uses: actions/download-artifact@v8
+    - name: Restore cached source
+      uses: actions/cache/restore@v5
       with:
         path: decompiled/
-        name: decompiled_models
+        key: decompiled-${{ github.sha }}
     
     - name: Parse ZR repo code
       run: |

@@ -45,6 +45,20 @@ opt["render.effect.antialiasing.enable"] = True
 opt["render.effect.antialiasing.mode"] = "ssaa"
 opt["render.effect.ambient_occlusion"] = True
 
+def generate_weapon_icon(weapon_data, weapon_name, pure_filename):
+    # Get SMD file
+    if "weapon_bodygroup" in weapon_data: mdl_bodygroup = weapon_data["weapon_bodygroup"]
+    else: mdl_bodygroup = "1"
+    smd_path = "decompiled/"+json.loads(util.read(f"decompiled/{pure_filename}.json"))[mdl_bodygroup] # TODO cache
+    # Convert SMD => OBJ
+    with pyassimp.load(smd_path) as assimp_scene: # <class 'contextlib._GeneratorContextManager'> must have storage info
+        pyassimp.export(assimp_scene, f"decompiled/{weapon_name}.obj", "obj")
+    # Generate thumbnail using F3D
+    util.log(f"Generating thumbnail of decompiled/{weapon_name}.obj")
+    eng.scene.clear()
+    eng.scene.add(f"decompiled/{weapon_name}.obj")
+    eng.window.render_to_image(no_background=True).save(f"./gh-pages/icons/{weapon_name}.png")
+    return f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="icons/{weapon_name}.png">'
 
 class Weapon:
     def __init__(self, weapon_name, weapon_data):
@@ -79,24 +93,11 @@ class Weapon:
         self.icon = ""
         if "model_weapon_override" in weapon_data:
             if weapon_data["model_weapon_override"].startswith("models/zombie_riot/weapons/"):
-                self.pure_filename = weapon_data["model_weapon_override"].split("/")[-1].split(".")[0]
-                if os.path.isfile(f"decompiled/{self.pure_filename}.json"): # only generate icon if decompiled data exists
-                    # Get SMD file
-                    if "weapon_bodygroup" in weapon_data: self.mdl_bodygroup = weapon_data["weapon_bodygroup"]
-                    else: self.mdl_bodygroup = "1"
-                    self.smd_path = "decompiled/"+json.loads(util.read(f"decompiled/{self.pure_filename}.json"))[self.mdl_bodygroup] # TODO cache
-                    # Convert SMD => OBJ
-                    with pyassimp.load(self.smd_path) as assimp_scene: # <class 'contextlib._GeneratorContextManager'> must have storage info
-                        pyassimp.export(assimp_scene, f"decompiled/{self.name}.obj", "obj")
-                    # Generate thumbnail using F3D
-                    util.log(f"Generating thumbnail of decompiled/{self.name}.obj")
-                    print(f"debug:generating thumbnail {self.name}")
-                    eng.scene.clear()
-                    eng.scene.add(f"decompiled/{self.name}.obj")
-                    eng.window.render_to_image(no_background=True).save(f"./gh-pages/icons/{self.name}.png")
-                    self.icon = f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="icons/{self.name}.png">'
+                pure_filename = weapon_data["model_weapon_override"].split("/")[-1].split(".")[0]
+                if os.path.isfile(f"decompiled/{pure_filename}.json"): # only generate icon if decompiled data exists
+                    self.icon = generate_weapon_icon(weapon_data,weapon_name,pure_filename)
                 else:
-                    util.log(f"Skipping thumbnail generation: bodygroup mappings missing for {self.pure_filename}","WARNING")
+                    util.log(f"Skipping thumbnail generation: bodygroup mappings missing for {pure_filename}","WARNING")
                     
 
 
