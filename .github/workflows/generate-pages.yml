@@ -27,14 +27,10 @@ jobs:
         run: | 
           Invoke-Webrequest https://github.com/mrglaster/Source-models-decompiler-cmd/releases/download/Update/CrowbarDecompiler.1.1.zip -OutFile CrowbarDecompiler.1.1.zip
           Expand-Archive .\CrowbarDecompiler.1.1.zip .\
-      
-      - run: ls
 
       - name: Decompile
         run: |
-          $env:SCOPE = 'items'
-          $env:DEBUG = 'decompile'
-          venv\Scripts\python.exe main.py
+          venv\Scripts\python.exe modules\weapon-decompile.py
 
       - name: Upload decompiled model data
         uses: actions/upload-artifact@v7

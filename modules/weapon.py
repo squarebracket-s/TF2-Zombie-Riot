@@ -16,12 +16,9 @@ CFG_WEAPONS = vdf.loads(util.read("./TF2-Zombie-Riot/addons/sourcemod/configs/zo
 TODO
 [ ] Weapon Attributes (Clip, reserve, firerate, etc.)
 [ ] Tooltip CSS rework as to fit the attributes
-[ ] Automatically generated weapon icons... someday.
-[ ] Strip as much unused functionality as possible while DEBUG=decompile
 [ ] Fix: When searching for weapon kit, its weapons may not be shown if the name differs from the kit name
 """
 
-DECOMPILED_MDLS=[]
 class Weapon:
     def __init__(self, weapon_name, weapon_data):
         self._weapon_name,self.name=weapon_name,weapon_name
@@ -56,37 +53,21 @@ class Weapon:
         if "model_weapon_override" in weapon_data:
             if weapon_data["model_weapon_override"].startswith("models/zombie_riot/weapons/"):
                 self.pure_filename = weapon_data["model_weapon_override"].split("/")[-1].split(".")[0]
-                if (weapon_data["model_weapon_override"] not in DECOMPILED_MDLS):
-                    if "decompile" in util.DEBUG:
-                        # Decompile model
-                        model_path = f"TF2-Zombie-Riot/{weapon_data["model_weapon_override"]}"
-                        subprocess.run(["./CrowbarDecompiler(1.1).exe",model_path,"decompiled/"])
-                        DECOMPILED_MDLS.append(weapon_data["model_weapon_override"])
-                        
-                        # Generate bodygroup mappings for model
-                        qcdata = util.read(f"decompiled/{self.pure_filename}.qc")
-                        bodygroup_idx = 1
-                        bodygroup_map = {}
-                        for line in qcdata.split("\n"):
-                            if line.strip().startswith("studio"):
-                                bodygroup_map[2**(bodygroup_idx-1)]=line.split(" ")[-1].strip('"')
-                                bodygroup_idx += 1
-                        util.write(f"decompiled/{self.pure_filename}.json", json.dumps(bodygroup_map,indent=2))
-                    elif os.path.isfile(f"decompiled/{self.pure_filename}.json"): # only generate icon if decompiled data exists
-                        # Get SMD file
-                        if "weapon_bodygroup" in weapon_data: self.mdl_bodygroup = weapon_data["weapon_bodygroup"]
-                        else: self.mdl_bodygroup = "1"
-                        self.smd_path = "decompiled/"+json.loads(util.read(f"decompiled/{self.pure_filename}.json"))[self.mdl_bodygroup] # TODO cache
-                        # Convert SMD => OBJ
-                        with load(self.smd_path) as assimp_scene:
-                            assert len(assimp_scene.meshes)
-                            assimp_mesh = assimp_scene.meshes[0]
-                            assert len(assimp_mesh.vertices)
-                        trimesh_mesh = trimesh.Trimesh(vertices=assimp_mesh.vertices,faces=assimp_mesh.faces)
-                        trimesh_mesh.export(f"decompiled/{self.name}.obj")
-                        # Generate thumbnail using F3D
-                        subprocess.run(["f3d", f'decompiled/{self.name}.obj', "--output", f'gh-pages/icons/{self.name}.png', "--no-background", "--grid=false", "--axis=false", "--filename=false", "--color=.7,.7,.7"])
-                        self.icon = f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="icons/{self.name}.png">'
+                if os.path.isfile(f"decompiled/{self.pure_filename}.json"): # only generate icon if decompiled data exists
+                    # Get SMD file
+                    if "weapon_bodygroup" in weapon_data: self.mdl_bodygroup = weapon_data["weapon_bodygroup"]
+                    else: self.mdl_bodygroup = "1"
+                    self.smd_path = "decompiled/"+json.loads(util.read(f"decompiled/{self.pure_filename}.json"))[self.mdl_bodygroup] # TODO cache
+                    # Convert SMD => OBJ
+                    with load(self.smd_path) as assimp_scene:
+                        assert len(assimp_scene.meshes)
+                        assimp_mesh = assimp_scene.meshes[0]
+                        assert len(assimp_mesh.vertices)
+                    trimesh_mesh = trimesh.Trimesh(vertices=assimp_mesh.vertices,faces=assimp_mesh.faces)
+                    trimesh_mesh.export(f"decompiled/{self.name}.obj")
+                    # Generate thumbnail using F3D
+                    subprocess.run(["f3d", f'decompiled/{self.name}.obj', "--output", f'gh-pages/icons/{self.name}.png', "--no-background", "--grid=false", "--axis=false", "--filename=false", "--color=.7,.7,.7"])
+                    self.icon = f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="icons/{self.name}.png">'
                     
 
 
@@ -274,11 +255,11 @@ def parse():
                                 h += kitwep.paps_to_html(wcfghidden=False, wtags=kit.tags)
                         return h
                     contents += f'<div style="margin-left: 10px;">\n{_kitweps()}</div>\n'
-                elif item[0].isupper() and itm.is_category or "Perks" in item and not ("decompile" in util.DEBUG): # unneeded data is always lowercase...
+                elif item[0].isupper() and itm.is_category or "Perks" in item: # unneeded data is always lowercase...
                     contents, tags = item_block(item, item_data, depth, contents, tags)
-                elif "Trophies" == item and not ("decompile" in util.DEBUG): # Item
+                elif "Trophies" == item: # Item
                     contents, tags = item_block(item, item_data, depth, contents, tags)
-                elif itm.is_text and not ("decompile" in util.DEBUG): # Text shown in menu
+                elif itm.is_text: # Text shown in menu
                     contents += f"{item}\n"
             html += f'<details>\n    <summary class="noselect">{key}</summary>{contents}</details>\n'
         return html, tags
@@ -289,10 +270,9 @@ def parse():
         if GenericItem(CFG_WEAPONS[item_category]).is_item_category:
             HTML_WEAPON, tags = item_block(item_category,CFG_WEAPONS[item_category],0, HTML_WEAPON, tags)
     
-    if not ("decompile" in util.DEBUG):
-        tags_html = "".join([f"<div class=\"btn\" tabindex=\"0\" onclick=\"filter_set_tag('{tag}');\">#{tag}</div>" for tag in tags])
-        context = {
-            "gtags": tags_html,
-            "itemdata": HTML_WEAPON
-        }
-        util.write("gh-pages/items.html", util.fill_template(util.read("templates/items/items.html"), context))
+    tags_html = "".join([f"<div class=\"btn\" tabindex=\"0\" onclick=\"filter_set_tag('{tag}');\">#{tag}</div>" for tag in tags])
+    context = {
+        "gtags": tags_html,
+        "itemdata": HTML_WEAPON
+    }
+    util.write("gh-pages/items.html", util.fill_template(util.read("templates/items/items.html"), context))
