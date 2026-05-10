@@ -62,16 +62,15 @@ class Weapon:
                         pyassimp.export(assimp_scene, f"decompiled/{self.name}.obj", "obj")
                     # Generate thumbnail using F3D
                     util.log(f"Generating thumbnail of decompiled/{self.name}.obj")
-                    subprocess.run(["f3d", f'decompiled/{self.name}.obj', "--output", f'./gh-pages/icons/{self.name}.png', "--no-background", "--grid=false", "--axis=false", "--filename=false", "--color=.7,.7,.7"])
+                    subprocess.run(["f3d", f'decompiled/{self.name}.obj', "--output", f'./gh-pages/icons/{self.name}.png', "--no-background", "--grid=false", "--axis=false", "--filename=false", "--color=.7,.7,.7", "--verbose"])
                     self.icon = f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="icons/{self.name}.png">'
                 else:
-                    util.log(f"Skipping thumbnail generation: bodygroup mappings missing for {self.pure_filename}","WARN")
+                    util.log(f"Skipping thumbnail generation: bodygroup mappings missing for {self.pure_filename}","WARNING")
                     
 
 
     def to_html(self,wcfghidden=True,wtags=None):
         hidden_str = "<i>Hidden</i>\n" if "hidden" in self._weapon_data else ""
-        # TODO defaultdict to clean up
         context = {
             "name": self.name,
             "data_item": util.fill_template(
