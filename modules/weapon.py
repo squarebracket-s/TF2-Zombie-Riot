@@ -62,7 +62,7 @@ class Weapon:
                         pyassimp.export(assimp_scene, f"decompiled/{self.name}.obj", "obj")
                     # Generate thumbnail using F3D
                     util.log(f"Generating thumbnail of decompiled/{self.name}.obj")
-                    subprocess.run(["f3d", f'decompiled/{self.name}.obj', "--output", f'./gh-pages/icons/{self.name}.png', "--no-background", "--grid=false", "--axis=false", "--filename=false", "--color=.7,.7,.7", "--verbose", "--no-config"])
+                    subprocess.run(["f3d", f'decompiled/{self.name}.obj', "--output", f'./gh-pages/icons/{self.name}.png', "--no-background", "--grid=false", "--axis=false", "--filename=false", "--color=.7,.7,.7", "--verbose", "--dry-run"])
                     self.icon = f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="icons/{self.name}.png">'
                 else:
                     util.log(f"Skipping thumbnail generation: bodygroup mappings missing for {self.pure_filename}","WARNING")
