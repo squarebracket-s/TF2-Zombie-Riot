@@ -37,6 +37,7 @@ jobs:
         with:
           path: decompiled/
           key: decompiled-${{ github.sha }}
+          enableCrossOsArchive: true
   build:
     needs: decompile
     name: generate-pages
