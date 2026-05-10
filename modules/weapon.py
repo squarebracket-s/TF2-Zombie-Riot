@@ -1,5 +1,5 @@
 # Parse all items, weapons and their paps.
-import util, vdf, os, subprocess, json, trimesh
+import util, vdf, os, subprocess, json
 trimesh.util.attach_to_log()
 #from modules.gamedata import items_game
 
@@ -8,7 +8,7 @@ if os.path.isdir("venv/lib/python3.14/site-packages/pyassimp/"):
     util.write("venv/lib/python3.14/site-packages/pyassimp/core.py", util.read("venv/lib/python3.14/site-packages/pyassimp/core.py").replace("""else:
                         setattr(target, name, [obj[i] for i in range(length)])""","""elif obj:
                         setattr(target, name, [obj[i] for i in range(length)])"""))
-    from pyassimp import load
+import pyassimp
 
 CFG_WEAPONS = vdf.loads(util.read("./TF2-Zombie-Riot/addons/sourcemod/configs/zombie_riot/weapons.cfg"))["Weapons"]
 
@@ -59,14 +59,10 @@ class Weapon:
                     else: self.mdl_bodygroup = "1"
                     self.smd_path = "decompiled/"+json.loads(util.read(f"decompiled/{self.pure_filename}.json"))[self.mdl_bodygroup] # TODO cache
                     # Convert SMD => OBJ
-                    with load(self.smd_path) as assimp_scene:
-                        assert len(assimp_scene.meshes)
-                        assimp_mesh = assimp_scene.meshes[0]
-                        assert len(assimp_mesh.vertices)
-                    trimesh_mesh = trimesh.Trimesh(vertices=assimp_mesh.vertices,faces=assimp_mesh.faces)
-                    trimesh_mesh.export(f"decompiled/{self.name}.obj")
+                    with pyassimp.load(self.smd_path) as assimp_scene: # <class 'contextlib._GeneratorContextManager'> must have storage info
+                        pyassimp.export(assimp_scene, f"decompiled/{self.name}.obj", "obj")
                     # Generate thumbnail using F3D
-                    subprocess.run(["f3d", f'decompiled/{self.name}.obj', "--output", f'gh-pages/icons/{self.name}.png', "--no-background", "--grid=false", "--axis=false", "--filename=false", "--color=.7,.7,.7"])
+                    subprocess.run(["f3d", f'decompiled/{self.name}.obj', "--output", f'./gh-pages/icons/{self.name}.png', "--no-background", "--grid=false", "--axis=false", "--filename=false", "--color=.7,.7,.7"])
                     self.icon = f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="icons/{self.name}.png">'
                     
 

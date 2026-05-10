@@ -7,4 +7,3 @@ beautifulsoup4
 ruamel.yaml
 pyassimp
 setuptools
-trimesh
