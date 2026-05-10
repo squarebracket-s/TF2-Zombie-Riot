@@ -3,6 +3,7 @@ __pycache__/
 
 # Local testing
 .obsidian/
+.github/workflows/act.yml
 venv/
 TF2-Zombie-Riot/
 decompiled/

@@ -1,6 +1,5 @@
 # Parse all items, weapons and their paps.
 import util, vdf, os, subprocess, json
-trimesh.util.attach_to_log()
 #from modules.gamedata import items_game
 
 # Patch pyassimp to prevent null pointer error
