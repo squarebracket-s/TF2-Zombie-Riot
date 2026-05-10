@@ -8,4 +8,3 @@ ruamel.yaml
 pyassimp
 setuptools
 trimesh
-pyrender

@@ -6,6 +6,7 @@ __pycache__/
 venv/
 TF2-Zombie-Riot/
 decompiled/
+tmp/
 
 # NOTE unused premedia icons in tf2_zr_wikigen archive
 premedia_icons_unused/

@@ -90,7 +90,7 @@ input[type=search] {
 }
 
 .weapon_preview {
-    max-height: 32px;
+    max-height: 128px;
 }
 
 .hover:hover .tooltip, .hover:focus .tooltip {
