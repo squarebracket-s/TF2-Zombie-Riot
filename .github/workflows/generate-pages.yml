@@ -64,6 +64,8 @@ jobs:
         name: decompiled_models
     
     - name: Parse ZR repo code
+      env:
+        EGL_MESA_device_software: 1
       run: ./venv/bin/python main.py
     
     - name: Upload static files as artifact

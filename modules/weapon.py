@@ -90,6 +90,7 @@ class Weapon:
                         pyassimp.export(assimp_scene, f"decompiled/{self.name}.obj", "obj")
                     # Generate thumbnail using F3D
                     util.log(f"Generating thumbnail of decompiled/{self.name}.obj")
+                    print(f"debug:generating thumbnail {self.name}")
                     eng.scene.clear()
                     eng.scene.add(f"decompiled/{self.name}.obj")
                     eng.window.render_to_image(no_background=True).save(f"./gh-pages/icons/{self.name}.png")
