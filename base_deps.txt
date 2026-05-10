@@ -7,3 +7,4 @@ beautifulsoup4
 ruamel.yaml
 pyassimp
 setuptools
+f3d

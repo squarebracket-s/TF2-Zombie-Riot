@@ -49,7 +49,7 @@ jobs:
 
     - name: Install prerequisites (SMD=>OBJ conversion, icons)
       run: |
-        sudo apt-get install libassimp-dev f3d -y --allow-downgrades --allow-remove-essential --allow-change-held-packages
+        sudo apt-get install libassimp-dev -y --allow-downgrades --allow-remove-essential --allow-change-held-packages
 
     - name: Setup venv
       run: python -m venv venv; ./venv/bin/pip install -r requirements.txt

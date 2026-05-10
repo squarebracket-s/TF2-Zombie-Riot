@@ -1,5 +1,5 @@
 # Parse all items, weapons and their paps.
-import util, vdf, os, subprocess, json
+import util, vdf, os, subprocess, json, f3d
 #from modules.gamedata import items_game
 
 # Patch pyassimp to prevent null pointer error
@@ -17,6 +17,34 @@ TODO
 [ ] Tooltip CSS rework as to fit the attributes
 [ ] Fix: When searching for weapon kit, its weapons may not be shown if the name differs from the kit name
 """
+
+# https://github.com/f3d-app/f3d/blob/master/examples/libf3d/python/offscreen-thumbnail/offscreen_thumbnail.py
+f3d.Engine.autoload_plugins()
+eng = f3d.Engine.create(True)
+eng.window.size = 256,256
+opt = eng.options
+
+# No UI overlays in thumbnails
+opt["ui.axis"] = False
+opt["ui.fps"] = False
+opt["ui.filename"] = False
+opt["ui.metadata"] = False
+opt["ui.console"] = False
+opt["ui.cheatsheet"] = False
+
+# Neutral background, no grid or skybox
+opt["render.grid.enable"] = False
+opt["render.background.color"] = [0.15, 0.15, 0.15]  # dark neutral gray
+
+# Slightly stronger lighting so assets read well at small sizes
+opt["render.light.intensity"] = 1.2
+opt["model.color.rgb"] = (.7,.7,.7)
+
+# Post-processing: AA + AO for better thumbnails
+opt["render.effect.antialiasing.enable"] = True
+opt["render.effect.antialiasing.mode"] = "ssaa"
+opt["render.effect.ambient_occlusion"] = True
+
 
 class Weapon:
     def __init__(self, weapon_name, weapon_data):
@@ -62,7 +90,9 @@ class Weapon:
                         pyassimp.export(assimp_scene, f"decompiled/{self.name}.obj", "obj")
                     # Generate thumbnail using F3D
                     util.log(f"Generating thumbnail of decompiled/{self.name}.obj")
-                    subprocess.run(["f3d", f'decompiled/{self.name}.obj', "--output", f'./gh-pages/icons/{self.name}.png', "--no-background", "--grid=false", "--axis=false", "--filename=false", "--color=.7,.7,.7", "--verbose", "--dry-run"])
+                    eng.scene.clear()
+                    eng.scene.add(f"decompiled/{self.name}.obj")
+                    eng.window.render_to_image(no_background=True).save(f"./gh-pages/icons/{self.name}.png")
                     self.icon = f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="icons/{self.name}.png">'
                 else:
                     util.log(f"Skipping thumbnail generation: bodygroup mappings missing for {self.pure_filename}","WARNING")
