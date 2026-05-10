@@ -9,7 +9,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  decompile:
+      name: decompile-models
+      runs-on: windows-latest
+      steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - name: Setup venv
+        run: python -m venv venv; venv\Scripts\pip.exe install -r requirements_decompile.txt
+      
+      - name: Clone ZR repo
+        run: git clone https://github.com/artvin01/TF2-Zombie-Riot --depth 1
+      
+      - name: Download CLI mdl decompiler
+        run: | 
+          Invoke-Webrequest https://github.com/mrglaster/Source-models-decompiler-cmd/releases/download/Update/CrowbarDecompiler.1.1.zip -OutFile CrowbarDecompiler.1.1.zip
+          Expand-Archive .\CrowbarDecompiler.1.1.zip .\
+      
+      - run: ls
+
+      - name: Decompile
+        run: |
+          $env:SCOPE = 'items'
+          $env:DEBUG = 'decompile'
+          venv\Scripts\python.exe main.py
+
+      - name: Upload decompiled model data
+        uses: actions/upload-artifact@v7
+        with:
+          path: decompiled/
+          name: decompiled_models
   build:
+    needs: decompile
     name: generate-pages
     runs-on: ubuntu-latest
     steps:
@@ -18,32 +51,24 @@ jobs:
       with:
         python-version: '3.14'
 
+    - name: Install prerequisites (SMD importing) # it is still possible to use windows if phrase parsing is avoided but this might just be faster
+      run: |
+        sudo apt-get install libassimp-dev -y --allow-downgrades --allow-remove-essential --allow-change-held-packages
+
     - name: Setup venv
       run: python -m venv venv; ./venv/bin/pip install -r requirements.txt
-
-    - name: Install wine (MDL decompiling) # it is still possible to use windows if phrase parsing is avoided but this might just be faster
-      run: |
-        sudo apt install wine64 xvfb
-
-    - name: Download mrglaster/Source-models-decompiler-cmd (MDL decompiling)
-      run: | 
-        wget https://github.com/mrglaster/Source-models-decompiler-cmd/releases/download/Update/CrowbarDecompiler.1.1.zip
-        unzip ./CrowbarDecompiler.1.1.zip
-        chmod +x "./CrowbarDecompiler(1.1).exe"
-        ls
-
-    - name: Install assimp (SMD importing)
-      run: sudo apt install libassimp-dev
     
     - name: Clone ZR repo
-      run: git clone https://github.com/artvin01/TF2-Zombie-Riot
+      run: git clone https://github.com/artvin01/TF2-Zombie-Riot --depth 1
+
+    - name: Fetch decompiled model data
+      uses: actions/download-artifact@v8
+      with:
+        path: decompiled/
+        name: decompiled_models
 
     - name: Parse ZR repo code
-      env:
-        DISPLAY: ":0.0"
-      run: |
-        Xvfb :0 -screen 0 1024x768x16 &
-        ./venv/bin/python main.py
+      run: ./venv/bin/python main.py
     
     - name: Upload static files as artifact
       id: deployment

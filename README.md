@@ -43,4 +43,3 @@ Decompiled model files are located in `decompiled/`.
   - [x] Trophies
   - [ ] Weapon Attributes (Clip, reserve, firerate, etc.)
 - [x] Skilltree data
-

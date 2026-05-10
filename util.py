@@ -209,8 +209,14 @@ def log(message, color="OKGREEN"):
 
 def read(filename):
     try:
-        with open(filename, 'r') as f:
-            return f.read()
+        # Windows-specific fix to: https://stackoverflow.com/questions/9233027/unicodedecodeerror-charmap-codec-cant-decode-byte-x-in-position-y-character
+        # no idea if applying encoding="utf-8" everywhere changes anything, better be safe
+        if os.name == 'nt':
+            with open(filename, 'r', encoding="utf-8") as f:
+                return f.read()
+        else:
+            with open(filename, 'r') as f:
+                return f.read()
     except FileNotFoundError:
         return None
 
@@ -228,6 +234,7 @@ def write(filename, val):
 PHRASES = []
 
 def get_key(k,silent=False,empty_on_fail=False):
+    silent = silent or "decompile" in DEBUG
     for phr in PHRASES:
         if k in phr:
             return phr[k]["en"]
