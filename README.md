@@ -17,7 +17,7 @@ git clone https://github.com/artvin01/TF2-Zombie-Riot
 # Dependencies: wine, unzip, assimp (linked above)
 wget https://github.com/mrglaster/Source-models-decompiler-cmd/releases/download/Update/CrowbarDecompiler.1.1.zip
 unzip CrowbarDecompiler.1.1.zip
-SCOPE=items DEBUG=decompile ./venv/bin/python main.py
+./venv/bin/python modules/weapon-decompile.py
 
 # Generate wiki
 ./venv/bin/python main.py

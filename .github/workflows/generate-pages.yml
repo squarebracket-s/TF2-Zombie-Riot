@@ -62,6 +62,8 @@ jobs:
       with:
         path: decompiled/
         name: decompiled_models
+    
+    - run: ls
 
     - name: Parse ZR repo code
       run: ./venv/bin/python main.py
