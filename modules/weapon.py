@@ -43,9 +43,9 @@ opt["render.effect.antialiasing.mode"] = "ssaa"
 opt["render.effect.ambient_occlusion"] = True
 
 def generate_weapon_icon(weapon_data, weapon_name, pure_filename, prefix=""):
-    print(weapon_name, pure_filename, weapon_data)
+    util.log(f"{weapon_name}, {pure_filename}")
     if os.path.isfile(f"{prefix}icons/{weapon_name}.png"): # Pre-generated icons
-        print("Cached!")
+        util.log("> Cached!")
         return f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="{prefix}icons/{weapon_name}.png">'
 
     # Get SMD file

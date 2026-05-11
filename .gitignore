@@ -9,7 +9,12 @@ TF2-Zombie-Riot/
 decompiled/
 
 # Generating thumbnails of TF2 models
-tf_decompiled/
+# Exclude everything but the bodygroup mappings
+tf_decompiled/*.mtl
+tf_decompiled/*.obj
+tf_decompiled/*.qc
+tf_decompiled/*.smd
+tf_decompiled/*/
 models/
 
 # NOTE unused premedia icons in tf2_zr_wikigen archive
