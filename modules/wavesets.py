@@ -230,7 +230,7 @@ def parse():
                         elif data_key not in npc_data.health: data_key = "default";
 
                         npc_name_prefix += wave_entry_data["data"].capitalize()
-                        util.debug(f"Parsing HP Value {npc_data.health} DATA value {wave_entry_data["data"]} CHOSEN value {data_key}", "npc", "OKCYAN")
+                        util.debug(f"Parsing HP Value {npc_data.health} DATA value {wave_entry_data["data"]} CHOSEN value {data_key}", "npcs", "OKCYAN")
                         h = f" {npc_data.health[data_key.lower()]}"
                     else:
                         h = npc_data.health["default"]
@@ -357,7 +357,7 @@ def parse():
     def parse_waveset(file, data, abslink, name, desc, DEPTH=2):
         global waveset_cache
         if file in waveset_cache:
-            util.debug(f"    -> Returning cache for {file}", "waveset", "OKCYAN")
+            util.debug(f"    -> Returning cache for {file}", "wavesets", "OKCYAN")
             return waveset_cache[file]
         
         wd = defaultdict(str,data)

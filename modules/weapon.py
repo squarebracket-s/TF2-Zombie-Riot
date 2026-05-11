@@ -31,10 +31,7 @@ opt["ui.filename"] = False
 opt["ui.metadata"] = False
 opt["ui.console"] = False
 opt["ui.cheatsheet"] = False
-
-# Neutral background, no grid or skybox
 opt["render.grid.enable"] = False
-opt["render.background.color"] = [0.15, 0.15, 0.15]  # dark neutral gray
 
 # Slightly stronger lighting so assets read well at small sizes
 opt["render.light.intensity"] = 1.2
@@ -45,20 +42,27 @@ opt["render.effect.antialiasing.enable"] = True
 opt["render.effect.antialiasing.mode"] = "ssaa"
 opt["render.effect.ambient_occlusion"] = True
 
-def generate_weapon_icon(weapon_data, weapon_name, pure_filename):
+def generate_weapon_icon(weapon_data, weapon_name, pure_filename, prefix=""):
+    print(weapon_name, pure_filename, weapon_data)
+    if os.path.isfile(f"{prefix}icons/{weapon_name}.png"): # Pre-generated icons
+        print("Cached!")
+        return f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="{prefix}icons/{weapon_name}.png">'
+
     # Get SMD file
     if "weapon_bodygroup" in weapon_data: mdl_bodygroup = weapon_data["weapon_bodygroup"]
     else: mdl_bodygroup = "1"
-    smd_path = "decompiled/"+json.loads(util.read(f"decompiled/{pure_filename}.json"))[mdl_bodygroup] # TODO cache
+    smd_path = f"{prefix}decompiled/{json.loads(util.read(f"{prefix}decompiled/{pure_filename}.json"))[mdl_bodygroup]}" # TODO cache
+
     # Convert SMD => OBJ
     with pyassimp.load(smd_path) as assimp_scene: # <class 'contextlib._GeneratorContextManager'> must have storage info
-        pyassimp.export(assimp_scene, f"decompiled/{weapon_name}.obj", "obj")
+        pyassimp.export(assimp_scene, f"{prefix}decompiled/{weapon_name}.obj", "obj")
+
     # Generate thumbnail using F3D
-    util.log(f"Generating thumbnail of decompiled/{weapon_name}.obj")
+    util.log(f"Generating thumbnail of {prefix}decompiled/{weapon_name}.obj")
     eng.scene.clear()
-    eng.scene.add(f"decompiled/{weapon_name}.obj")
-    eng.window.render_to_image(no_background=True).save(f"./gh-pages/icons/{weapon_name}.png")
-    return f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="icons/{weapon_name}.png">'
+    eng.scene.add(f"{prefix}decompiled/{weapon_name}.obj")
+    eng.window.render_to_image(no_background=True).save(f"./gh-pages/{prefix}icons/{weapon_name}.png")
+    return f'<div class="secondary notice"><img src="static/info.svg">Experimental weapon preview</div><img class="weapon_preview" src="{prefix}icons/{weapon_name}.png">'
 
 class Weapon:
     def __init__(self, weapon_name, weapon_data):
@@ -92,10 +96,12 @@ class Weapon:
         # If weapon uses custom model, fetch source SMD file from bodygroup
         self.icon = ""
         if "model_weapon_override" in weapon_data:
-            if weapon_data["model_weapon_override"].startswith("models/zombie_riot/weapons/"):
+            if weapon_data["model_weapon_override"]!="models/empty.mdl":
                 pure_filename = weapon_data["model_weapon_override"].split("/")[-1].split(".")[0]
                 if os.path.isfile(f"decompiled/{pure_filename}.json"): # only generate icon if decompiled data exists
                     self.icon = generate_weapon_icon(weapon_data,weapon_name,pure_filename)
+                elif os.path.isfile(f"tf_decompiled/{pure_filename}.json"): # only generate icon if decompiled data exists
+                    self.icon = generate_weapon_icon(weapon_data,weapon_name,pure_filename, prefix="tf_")
                 else:
                     util.log(f"Skipping thumbnail generation: bodygroup mappings missing for {pure_filename}","WARNING")
                     

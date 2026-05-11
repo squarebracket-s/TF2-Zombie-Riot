@@ -165,10 +165,10 @@ class NPC:
         except ValueError:
             # Assume var/constant in code
             if num in self.npc_vars_dict:
-                util.debug(f"[X] {self.path} var {num}", "npc")
+                util.debug(f"[X] {self.path} var {num}", "npcs")
                 return util.format_num(self.npc_vars_dict[num])
             else:
-                util.debug(f"[ ] {self.path} var {num}", "npc")
+                util.debug(f"[ ] {self.path} var {num}", "npcs")
                 return "?"
                 #return "dynamic"
     

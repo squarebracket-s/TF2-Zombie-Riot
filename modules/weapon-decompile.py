@@ -22,23 +22,31 @@ CFG_WEAPONS = vdf.loads(read("./TF2-Zombie-Riot/addons/sourcemod/configs/zombie_
 
 DECOMPILED_MDLS=[]
 def decompile_model(path):
-    if path.startswith("models/zombie_riot/weapons/"):
-        pure_filename = path.split("/")[-1].split(".")[0]
-        if (path not in DECOMPILED_MDLS):
-            # Decompile model
-            model_path = f"TF2-Zombie-Riot/{path}"
-            subprocess.run(["./CrowbarDecompiler(1.1).exe",model_path,"decompiled/"])
-            DECOMPILED_MDLS.append(path)
-            
-            # Generate bodygroup mappings for model
-            qcdata = read(f"decompiled/{pure_filename}.qc")
-            bodygroup_idx = 1
-            bodygroup_map = {}
-            for line in qcdata.split("\n"):
-                if line.strip().startswith("studio"):
-                    bodygroup_map[2**(bodygroup_idx-1)]=line.split(" ")[-1].strip('"')
-                    bodygroup_idx += 1
-            write(f"decompiled/{pure_filename}.json", json.dumps(bodygroup_map,indent=2))
+    pure_filename = path.split("/")[-1].split(".")[0]
+    if (path not in DECOMPILED_MDLS):
+        # Decompile model
+        DECOMPILED_MDLS.append(path)
+        prefix = ""
+        if "zombie_riot" in path:
+            path = f"TF2-Zombie-Riot/{path}"
+        elif os.path.isdir("models"):
+            path = f"models/{path}"
+            prefix = "tf_"
+        else:
+            return
+        
+        os.environ["WINEDEBUG"] = "-all" # Cleaner logs when decompiling on linux
+        subprocess.run(["./CrowbarDecompiler(1.1).exe",path,f"{prefix}decompiled/"])
+        
+        # Generate bodygroup mappings for model
+        qcdata = read(f"{prefix}decompiled/{pure_filename}.qc")
+        bodygroup_idx = 1
+        bodygroup_map = {}
+        for line in qcdata.split("\n"):
+            if line.strip().startswith("studio"):
+                bodygroup_map[2**(bodygroup_idx-1)]=line.split(" ")[-1].strip('"')
+                bodygroup_idx += 1
+        write(f"{prefix}decompiled/{pure_filename}.json", json.dumps(bodygroup_map,indent=2))
 
 class Weapon:
     def __init__(self, weapon_name, weapon_data):
@@ -67,7 +75,7 @@ class Weapon:
 class WeaponPap:
     def __init__(self, weapon_name, weapon_data, idx):
         pap_key = f"pap_{idx}_"
-        print(f"Parsing {weapon_name} {pap_key}","weaponpap")
+        #print(f"Parsing {weapon_name} {pap_key}","weaponpap")
         if f"{pap_key}model_weapon_override" in weapon_data:
             decompile_model(weapon_data[f"{pap_key}model_weapon_override"])
 

@@ -7,7 +7,10 @@ __pycache__/
 venv/
 TF2-Zombie-Riot/
 decompiled/
-tmp/
+
+# Generating thumbnails of TF2 models
+tf_decompiled/
+models/
 
 # NOTE unused premedia icons in tf2_zr_wikigen archive
 premedia_icons_unused/
@@ -21,6 +24,7 @@ gh-pages/*
 !gh-pages/static/
 !gh-pages/builtin_img/
 !gh-pages/premedia_icons/
+!gh-pages/tf_icons/
 
 !gh-pages/waveset_viewer.html
 !gh-pages/multipliers.html
